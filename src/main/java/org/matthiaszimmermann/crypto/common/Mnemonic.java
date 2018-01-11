@@ -8,11 +8,10 @@ import java.io.InputStreamReader;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 /**
  * https://github.com/bitcoinj/bitcoinj/blob/master/core/src/main/java/org/bitcoinj/crypto/MnemonicCode.java
@@ -21,37 +20,35 @@ import java.util.Random;
  */
 public class Mnemonic {
 
-	private static final String BIP39_ENGLISH_RESOURCE_NAME = "wordlist/english.txt";
-	private static final String BIP39_ENGLISH_SHA256 = "F0CB4EA7A446004209928D296C528C38FCE077F59A49BFD88EC6C9AAA37C48C4";
-
-	private static final int SEED_LENGTH_BITCOIN = 64;
-	private static final int SEED_LENGTH_IOTA = 81;
+	public static final String BIP39_ENGLISH_RESOURCE_NAME = "wordlist/english.txt";
+	public static final String BIP39_ENGLISH_SHA256 = "0F91DA80C002DB0F322D2BFA7040CD4E972872C1B830CC233173207E4EECA326";
+	public static final int BIP39_ENGLISH_WORDS = 2048;
 
 	private static final String DIGEST_ALGORITHM_SHA256 = "SHA-256";
-	private static final int PBKDF2_ROUNDS = 2048;
-
-	private static final String TRYTE_ALPHABET = "9ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-	private static final String SALT_PREFIX = "mnemonic";
 
-	private ArrayList<String> wordList;
-
-	/** 
-	 * Initialize from the included word list.  
-	 * @throws NoSuchAlgorithmException 
-	 */
-	public Mnemonic() throws IOException, NoSuchAlgorithmException {
-		this(openDefaultWords(), BIP39_ENGLISH_SHA256);
-	}
+	//private ArrayList<String> wordList;
 
 	/**
-	 * Creates an MnemonicCode object, initializing with words read from the supplied input stream. 
-	 * If a wordListDigest is supplied the digest of the words will be checked.
+	 * Returns the official BIP39 English word list.
 	 * @throws IOException
 	 */
-	public Mnemonic(InputStream wordStream, String wordListDigest) throws IOException {
+	public static List<String> loadWordList() throws IOException {
+		List<String> words = loadWordList(openBip39Words(), BIP39_ENGLISH_SHA256);
+		
+		if (words.size() != BIP39_ENGLISH_WORDS) {
+			throw new IllegalArgumentException("input stream did not contain " + BIP39_ENGLISH_WORDS + " words but " + words.size());
+		}
 
-		wordList = new ArrayList<>();
+		return words;
+	}
+	
+	/**
+	 * Returns the word list obtained form the provided word stream and verifies it with the provided digest.
+	 */
+	public static List<String> loadWordList(InputStream wordStream, String wordListDigest) throws IOException {
+		List<String> words = new ArrayList<>();
+		
 		MessageDigest md = getSHA256MessageDigest();
 
 		try (DigestInputStream dis = new DigestInputStream(wordStream, md)) {
@@ -60,71 +57,44 @@ public class Mnemonic {
 
 			while ((word = br.readLine()) != null) {
 				md.update(word.getBytes());
-				wordList.add(word);
+				words.add(word);
 			}
 
 			br.close();
 		}
 
-		byte[] digest = md.digest();
-
-		if (wordList.size() != 2048) {
-			throw new IllegalArgumentException("input stream did not contain 2048 words but " + wordList.size());
-		}
-
 		// If a wordListDigest is supplied check to make sure it matches.
 		if (wordListDigest != null) {
-			String hexdigest = bytesToHex(digest);
+			String hexdigest = bytesToHex(md.digest());
 
 			if (!hexdigest.equals(wordListDigest)) {
 				throw new IllegalArgumentException("wordlist digest mismatch for digest '" + hexdigest + "'");
 			}
 		}
-	}
-
-	public int words() {
-		return wordList.size();
-	}
-
-	public String getWord(int index) {
-		if(index < 0 || index > wordList.size() - 1) {
-			return null;
-		}
-
-		return wordList.get(index);
-	}
-	
-	public byte [] generateEntropy() {
-		return generateEntropy(128);
-	}
-	
-	public byte [] generateEntropy(int bits) {
-        
-		if(bits < 0 || bits % 8 != 0) {
-			logError(new RuntimeException(), "Random bits needs to be positive and a multiple of 8 bits but is " + bits);
-		}
 		
-        try {
-            SecureRandom sr;
-            sr = SecureRandom.getInstanceStrong();
-            return sr.generateSeed(bits / 8);
-        } 
-        catch (NoSuchAlgorithmException e) {
-            logError(e, "Failed to create secure random instance");
-            return null;
-        }
+		return words;
 	}
 
 	/**
 	 * Convert entropy data to mnemonic word list.
 	 * @throws NoSuchAlgorithmException 
 	 */
-	public List<String> toMnemonic(byte[] entropy) throws IllegalArgumentException {
-		if (entropy.length % 4 > 0)
-			throw new IllegalArgumentException("Entropy length not multiple of 32 bits.");
-
-		if (entropy.length == 0)
+	public static List<String> toWords(byte[] entropy, List<String> wordList) throws IllegalArgumentException {
+		if(entropy.length == 0) {
 			throw new IllegalArgumentException("Entropy is empty.");
+		}
+		
+		if(entropy.length % 4 > 0) {
+			throw new IllegalArgumentException("Entropy length not multiple of 32 bits.");
+		}
+		
+		if(wordList == null) {
+			throw new IllegalArgumentException("Word list is empty/null.");
+		}
+		
+		if(wordList.size() != BIP39_ENGLISH_WORDS) {
+			throw new IllegalArgumentException("Bad word list size. Only supported size is " +BIP39_ENGLISH_WORDS);
+		}
 
 		// We take initial entropy of ENT bits and compute its
 		// checksum by taking first ENT / 32 bits of its SHA256 hash.
@@ -157,7 +127,7 @@ public class Mnemonic {
 					index |= 0x1;
 			}
 
-			words.add(this.wordList.get(index));
+			words.add(wordList.get(index));
 		}
 
 		return words;        
@@ -166,14 +136,28 @@ public class Mnemonic {
 	/**
 	 * Check to see if a mnemonic word list is valid.
 	 */
-	public void check(List<String> words) throws IllegalArgumentException {
-		toEntropy(words);
+	public static void check(List<String> wordList, List<String> words) throws IllegalArgumentException {
+		toEntropy(wordList, words);
+	}
+	
+	/**
+	 * Concatenates words to a space separated string.
+	 */
+	public static String convert(List<String> words) {
+		return String.join(" ", words);
+	}
+	
+	/**
+	 * Separates a sentence of space separated words into a list of its individual words.
+	 */
+	public static List<String> convert(String sentence) {
+		return Arrays.asList(sentence.split(" "));
 	}
 
 	/**
 	 * Convert mnemonic word list to original entropy value.
 	 */
-	public byte[] toEntropy(List<String> words) throws IllegalArgumentException {
+	public static byte[] toEntropy(List<String> words, List <String> wordList) throws IllegalArgumentException {
 		if (words.size() % 3 > 0)
 			throw new IllegalArgumentException("Word list size must be multiple of three words.");
 
@@ -225,46 +209,7 @@ public class Mnemonic {
 	}
 
 
-	/**
-	 * Convert mnemonic word list to Bitcoin seed.
-	 */
-	public static byte[] toBitcoinSeed(List<String> words, String passphrase) {
-
-		// To create binary seed from mnemonic, we use PBKDF2 function
-		// with mnemonic sentence (in UTF-8) used as a password and
-		// string "mnemonic" + passphrase (again in UTF-8) used as a
-		// salt. Iteration count is set to 4096 and HMAC-SHA512 is
-		// used as a pseudo-random function. Desired length of the
-		// derived key is 512 bits (= 64 bytes).
-		//
-		String pass = String.join(" ", words);
-		String salt = SALT_PREFIX + passphrase;
-
-		byte[] seed = PBKDF2SHA512.derive(pass, salt, PBKDF2_ROUNDS, SEED_LENGTH_BITCOIN);
-
-		return seed;
-	}
-
-	public static String toIotaSeed(List<String> words, String passphrase) {
-		// 81 places 27 chars per place
-		// 8 bytes per long in java
-		// 
-		String pass = String.join(" ", words);
-		String salt = SALT_PREFIX + passphrase;
-
-		byte[] byteSeed = PBKDF2SHA512.derive(pass, salt, PBKDF2_ROUNDS, SEED_LENGTH_IOTA * 8);
-		StringBuffer seed = new StringBuffer();
-
-		for(int i = 0; i < SEED_LENGTH_IOTA; i++) {
-			Random r = new Random(bytesToLong(byteSeed, i * 8));
-			char c = TRYTE_ALPHABET.charAt(r.nextInt(27));
-			seed.append(c);
-		}
-
-		return seed.toString();
-	}
-
-	private static InputStream openDefaultWords() throws IOException {
+	private static InputStream openBip39Words() throws IOException {
 		InputStream stream = Mnemonic.class.getResourceAsStream(BIP39_ENGLISH_RESOURCE_NAME);
 
 		if (stream == null) {
@@ -274,7 +219,7 @@ public class Mnemonic {
 		return stream;
 	}
 
-	private MessageDigest getSHA256MessageDigest() {
+	private static MessageDigest getSHA256MessageDigest() {
 		try {
 			return MessageDigest.getInstance(DIGEST_ALGORITHM_SHA256);
 		} 
@@ -285,7 +230,7 @@ public class Mnemonic {
 		return null;
 	}
 
-	private void logError(Exception e, String message) {
+	private static void logError(Exception e, String message) {
 		System.err.println(message);
 		e.printStackTrace();
 		System.exit(-1);
@@ -313,16 +258,4 @@ public class Mnemonic {
 				bits[(i * 8) + j] = (data[i] & (1 << (7 - j))) != 0;
 		return bits;
 	}
-
-	/**
-	 * https://stackoverflow.com/questions/4485128/how-do-i-convert-long-to-byte-and-back-in-java
-	 */
-	private static long bytesToLong(byte[] b, int offset) {
-		long result = 0;
-		for (int i = 0; i < 8; i++) {
-			result <<= 8;
-			result |= (b[i + offset] & 0xFF);
-		}
-		return result;
-	}    
 }
