@@ -8,17 +8,24 @@ public abstract class Protocol {
 	private Network network;
 	
 	protected Protocol(Technology technology, Network network) {
-		
-		if(technology == null) {
-			throw new IllegalArgumentException("Technology must not be null");
-		}
-		
-		if(network == null) {
+		processTechnology(technology);
+		processNetwork(network);
+	}
+
+	private void processNetwork(Network n) {
+		if(n == null) {
 			throw new IllegalArgumentException("Network must not be null");
 		}
 		
-		this.technology = technology;
-		this.network = network;
+		network = n;
+	}
+
+	private void processTechnology(Technology t) {
+		if(t == null) {
+			throw new IllegalArgumentException("Technology must not be null");
+		}
+		
+		technology = t;
 	}
 	
 	public Technology getTechnology() {
@@ -29,5 +36,9 @@ public abstract class Protocol {
 		return network;
 	}
 	
-	abstract public Account restoreAccount(List<String> mnemonic, String passphrase);
+	abstract public Account restoreAccount(List<String> mnemonicWords, String passPhrase);
+
+	abstract public List<String> generateMnemonicWords();
+
+	abstract public void validateMnemonicWords(List<String> mnemonicWords);
 }

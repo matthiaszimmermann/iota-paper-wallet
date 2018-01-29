@@ -34,7 +34,8 @@ public class Seed {
 
 		return seed;
 	}
-
+	
+	//  https://www.reddit.com/r/Iota/comments/70srbt/an_easy_way_to_generate_a_seed_with_java_on/
 	public static String toIotaSeed(List<String> words, String passphrase) {
 		// 81 places 27 chars per place
 		// 8 bytes per long in java

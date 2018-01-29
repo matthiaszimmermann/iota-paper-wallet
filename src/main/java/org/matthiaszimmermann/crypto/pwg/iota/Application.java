@@ -1,144 +1,157 @@
 package org.matthiaszimmermann.crypto.pwg.iota;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
+import java.io.File;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Scanner;
 
-import org.bouncycastle.util.Arrays;
-import org.matthiaszimmermann.crypto.common.Account;
-import org.matthiaszimmermann.crypto.common.Entropy;
-import org.matthiaszimmermann.crypto.common.Mnemonic;
+import org.matthiaszimmermann.crypto.common.FileUtility;
 import org.matthiaszimmermann.crypto.common.Network;
 import org.matthiaszimmermann.crypto.common.Protocol;
 import org.matthiaszimmermann.crypto.common.ProtocolFactory;
-import org.matthiaszimmermann.crypto.common.Seed;
 import org.matthiaszimmermann.crypto.common.Technology;
+import org.matthiaszimmermann.crypto.common.Wallet;
+import org.matthiaszimmermann.crypto.common.WalletFactory;
 
-import jota.error.ArgumentException;
-import jota.pow.ICurl;
-import jota.pow.JCurl;
-import jota.pow.SpongeFactory;
-import jota.utils.IotaAPIUtils;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 
-/**
- * projectname ?
- * 
- * Entropy: *-> byte array that encodes entropy
- * Mnemonic: entropy -> word list -> entropy
- * Account: word list -> account
- * - (private) key/seed (the secret that provides access to funds stored under the address)
- * - (public) address
- * Currency Units (iota/?, ether/wei, bitcoin/satoshi, ...)
- * Amount
- * - Currency Unit
- * - Number (BigDecimal)
- * Transaction
- *   - status
- *   - hash (is there a iota tx hash?)
- *   - Sender (account)
- *   - Recipient (address)
- *   - Amount
- *   OfflineTransaction
- *     SignedOfflineTransaction (how is this done in iota?)
- * 
- * Protocol Implementation
- *   Bitcoin
- *   Ethereum
- *   Iota
- *   
- *   Protocol p = xy.new();
- *   Account a = p.restoreAccount(words, wordlist) // what about passphrase?
- *   String recipientAddress = "xyz";
- *   Amount amount = p.getAmount(0.01, CurrencyUnit.Bitcoin);
- *   Transaction tx = p.createTransaction(Account, recipientAddress, amount);
- *   
- *   p.connect();
- *   String txHash = p.submit(tx);
- *   
- *   Entropy.generate(int bits)
- *   Mnemonic.loadWordList()
- *   Mnemonic.toWords(byte [] entropy, List<String> wordList)
- *   Protocol.restoreAccount(List<String> words, List<String> wordList)
- *   Protocol.createTransaction(Account sender, String recipient, Amount amount)
- *   Protocol.connect()
- *   Protocol.submit(Transaction transaction) // what about tx fees?
- *   Protocol.getBalance(Account account)
- *   
- * 
- * @author matthiaszimmermann
- */
 public class Application {
 
-	public static void main(String[] args) throws NoSuchAlgorithmException, IOException, ArgumentException {
-		String passPhrase= "pass phrase";
-		
-		byte [] entropy = Entropy.generateEntropy();
-		List<String> wordList = Mnemonic.loadWordList();
-		List<String> words = Mnemonic.toWords(entropy, wordList);
-		String seed = Seed.toIotaSeed(words, passPhrase);
+	public static final String COMMAND_NAME = "java -jar bpgw.jar";
+	public static final String SWITCH_DIRECTORY = "-d";
+	public static final String SWITCH_PASS_PHRASE = "-p";
+	public static final String SWITCH_VERIFY = "-v";
 
-		System.out.println("mnemonic string: " + Mnemonic.convert(words));
-		System.out.println("iota seed: " + seed);
-		
-		byte [] entropyFromWords = Mnemonic.toEntropy(words, wordList);
-		
-		if(!Arrays.areEqual(entropy, entropyFromWords)) {
-			System.err.println("entropy mismatch");
+	public static final String CREATE_OK = "WALLET CREATION OK";
+	public static final String CRATE_ERROR = "WALLET CREATION ERROR";
+
+	public static final String VERIFY_OK = "WALLET VERIFICATION OK";
+	public static final String VERIFY_ERROR = "WALLET VERIFICATION ERROR";
+
+	public static final String EXT_HTML = "html";
+	public static final String EXT_PNG = "png";
+
+	@Parameter(names = {SWITCH_DIRECTORY, "--target-directory"}, description = "target directory for wallet file etc.")
+	private String targetDirectory = Wallet.DEFAULT_PATH_TO_DIRECTORY;
+
+	@Parameter(names = {SWITCH_PASS_PHRASE, "--pass-phrase"}, description = "pass phrase for the wallet file")
+	private String passPhrase;
+
+	@Parameter(names = {SWITCH_VERIFY, "--verify-wallet-file"}, description = "verify the specified wallet file")
+	private String walletFile = null;
+
+	@Parameter(names = {"-s", "--silent"}, description = "silent mode, suppress command line output")
+	private boolean silent = false;
+
+	@Parameter(names = {"-h", "--help"}, help = true)
+	private boolean help;
+
+	public static void main(String[] args) throws Exception {
+		Application app = new Application();
+		app.run(args);
+	}
+
+	public String run(String [] args) {
+		parseCommandLine(args);
+
+		if(walletFile == null) {
+			return createWalletFile();
 		}
 		else {
-			System.out.println("entropy ("+ (8 * entropy.length) + " bits) successfully recreated from words");
+			return verifyWalletFile();
+		}
+	}
+
+	public String createWalletFile() {
+		List<String> mnemonicWords = null;
+		Protocol protocol = null;
+		Wallet wallet = null;
+
+		// TODO add command line params to indicate technology and network
+		try {
+			protocol = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
+			wallet = WalletFactory.getInstance(mnemonicWords, passPhrase, protocol);
+			wallet.setPathToDirectory(targetDirectory);
+		}
+		catch(Exception e) {
+			return String.format("%s %s", CRATE_ERROR, e.getMessage());
 		}
 
-		int securityLevel = 2;
-		int index = 0;
-		boolean checksum = true;
-		ICurl curl = new JCurl(SpongeFactory.Mode.CURLP81);
-		String address = IotaAPIUtils.newAddress(seed, securityLevel, index, checksum, curl);
-		System.out.println("address[" + index + "] security level " + securityLevel + ": " + address);
+		String jsonFile = wallet.getAbsolutePath();
+		FileUtility.saveToFile(wallet.toString(), jsonFile);
+		log("wallet in json format:\n" + wallet.toJson().toString(2));
+		log("wallet in json format, single line:\n" + wallet.toJson().toString());
 
-		String sentence = "thank essence during frequent frost area pizza senior message jump course cliff";
-		List<String> wordsFromSentence = Mnemonic.convert(sentence);
-		String seedFromWords = Seed.toIotaSeed(wordsFromSentence, passPhrase);
-		String addressFromSeed = IotaAPIUtils.newAddress(seedFromWords, securityLevel, index, checksum, curl);
+		log("wallet file successfully created");
+		log(String.format("wallet pass phrase: '%s'", wallet.getPassPhrase()));
+		log(String.format("wallet file location: %s", jsonFile));
 
-		String expectedSeed = "KEFTZOPPKPBPXOJPRYNLKQNJQIPNCCDZPFASRGHNXDOOVFVFUFZHSYGPDAGPHMUWFRFYGEBXOFJTIBFVG";
-		if(seedFromWords.equals(expectedSeed)) {
-			System.out.println("sentence: " + sentence);
-			System.out.println("expected iota seed: " + seedFromWords);
-		}
-		else {
-			System.err.println("seed mismatch\nexpected: " + expectedSeed + "\nactual: " + seedFromWords);
+		String html = WalletPageUtility.createHtml(wallet);
+		byte [] qrCode = QrCodeUtility.contentToPngBytes(wallet.getAccount().getAddress(), 256);
+
+		String path = wallet.getPathToDirectory();
+		String baseName = wallet.getFileBaseName();
+		String htmlFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_HTML);
+		String pngFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_PNG);
+
+		log("writing additional output files ...");
+		FileUtility.saveToFile(html, htmlFile);
+		FileUtility.saveToFile(qrCode, pngFile);
+		log(String.format("html wallet: %s", htmlFile));
+		log(String.format("address qr code: %s", pngFile));
+
+		return String.format("%s %s", CREATE_OK, wallet.getAbsolutePath());
+	}
+
+	public String verifyWalletFile() {
+		if(passPhrase == null) {
+			Scanner scanner = new Scanner(System.in);
+
+			//  prompt for the user's name
+			System.out.print("wallet pass phrase: ");
+
+			// get their input as a String
+			passPhrase = scanner.next();
+			scanner.close();
 		}
 
-		String expectedAddress = "WBWMGJYFWMCFILCSGGKWOXSQBJFCYSEFLBY9ZBAMYPCYSDNYMJPNF9BHYJJERUNITYCMFUQCRNUYKYEOACNFEUFD9D";
-		if(addressFromSeed.equals(expectedAddress)) {
-			System.out.println("expected iota address: " + addressFromSeed);
-		}
-		else {
-			System.err.println("address mismatch\nexpected: " + expectedAddress + "\nactual: " + addressFromSeed);
-		}
-		
-		System.out.println("------------------------------");
-		Protocol iota = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
-		Account account = iota.restoreAccount(wordsFromSentence, passPhrase);
-		
-		System.out.println("API mnemonic words:   " + Mnemonic.convert(wordsFromSentence));
-		System.out.println("API pass phrase:      " + passPhrase);
-		System.out.println("API seed expected:    " + expectedSeed);
-		System.out.println("API seed actual:      " + account.getSecret() + " match=" + expectedSeed.equals(account.getSecret()));
-		
-		System.out.println("API address expected: " + expectedAddress);
-		System.out.println("API address actual:   " + account.getAddress() + " match=" + expectedAddress.equals(account.getAddress()));
-		System.out.println("------------------------------");
+		log("verifying wallet file ...");
+		Protocol protocol = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
+		File file = new File(walletFile);
 		
 		try {
-			TimeUnit.MILLISECONDS.sleep(10);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			WalletFactory.getInstance(file, passPhrase, protocol);
+			
+			log("wallet file successfully verified");
+			log("wallet file: " + walletFile);
+			log("pass phrase: " + passPhrase);
+			
+			return VERIFY_OK;
+		} 
+		catch (Exception e) {
+			String errorMessage = e.getMessage();
+			
+			log("verification failed: " + errorMessage);
+			log("wallet file: " + walletFile);
+			log("pass phrase: " + passPhrase);
+			
+			return String.format("%s %s", VERIFY_ERROR, errorMessage);
 		}
-		
-		String testSentence = sentence + " " + "neuesWort nochEins undDasLetzte";
-		Mnemonic.check(wordList, Mnemonic.convert(testSentence));
+	}
+
+	private void parseCommandLine(String [] args) {
+		JCommander cmd = new JCommander(this, args);
+		cmd.setProgramName(COMMAND_NAME);
+
+		if(help) {
+			cmd.usage();
+			System.exit(0);
+		}
+	}
+
+	private void log(String message) {
+		if(!silent) {
+			System.out.println(message);
+		}
 	}
 }

@@ -1,5 +1,6 @@
 package org.matthiaszimmermann.crypto.common;
 
+import java.io.IOException;
 import java.util.List;
 
 import jota.error.ArgumentException;
@@ -18,6 +19,7 @@ public class Iota extends Protocol {
 		super(technology, network);
 	}
 
+	// https://github.com/modum-io/tokenapp-keys-iota/blob/master/src/main/java/io/modum/IotaAddressGenerator.java
 	@Override
 	public Account restoreAccount(List<String> mnemonic, String passphrase) {
 		String seed = Seed.toIotaSeed(mnemonic, passphrase);
@@ -39,6 +41,29 @@ public class Iota extends Protocol {
 		}
 		
 		return new IotaAccount(seed, address, getNetwork());
+	}
+	
+	// http://ogrelab.ikratko.com/sending-new-transfer-to-iota-node-using-java-aka-sendtransfer/
+	public void dummy() {
+	}
+
+	@Override
+	public List<String> generateMnemonicWords() {
+		byte [] entropy = Entropy.generateEntropy();
+		List<String> wordList = null;
+
+		try {
+			wordList = Mnemonic.loadWordList();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to load mnemonic default word list");
+		}
+
+		return Mnemonic.toWords(entropy, wordList);
+	}
+
+	@Override
+	public void validateMnemonicWords(List<String> mnemonicWords) {
+		// TODO add some validation here. if something looks bad throw an illegal arg exception	
 	}
 
 }
