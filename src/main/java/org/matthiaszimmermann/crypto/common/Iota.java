@@ -19,17 +19,21 @@ public class Iota extends Protocol {
 		super(technology, network);
 	}
 
-	// https://github.com/modum-io/tokenapp-keys-iota/blob/master/src/main/java/io/modum/IotaAddressGenerator.java
 	@Override
 	public Account restoreAccount(List<String> mnemonic, String passphrase) {
 		String seed = Seed.toIotaSeed(mnemonic, passphrase);
-		String address = null;
+		String address = deriveAddressFromSeed(seed);
 		
+		return new IotaAccount(seed, address, getNetwork());
+	}
+	
+	// https://github.com/modum-io/tokenapp-keys-iota/blob/master/src/main/java/io/modum/IotaAddressGenerator.java
+	public static String deriveAddressFromSeed(String seed) {
 		ICurl curl = new JCurl(SpongeFactory.Mode.CURLP81);
 		int index = 0;
 
 		try {			
-			address = IotaAPIUtils.newAddress(
+			return IotaAPIUtils.newAddress(
 					seed, 
 					IotaAccount.SECURITY_LEVEL_DEFAULT,
 					index, 
@@ -39,9 +43,7 @@ public class Iota extends Protocol {
 		catch (ArgumentException e) {
 			throw new IllegalArgumentException(e);
 		}
-		
-		return new IotaAccount(seed, address, getNetwork());
-	}
+	} 
 	
 	// http://ogrelab.ikratko.com/sending-new-transfer-to-iota-node-using-java-aka-sendtransfer/
 	public void dummy() {

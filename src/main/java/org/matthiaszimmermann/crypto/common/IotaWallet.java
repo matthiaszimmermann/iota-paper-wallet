@@ -14,16 +14,15 @@ public class IotaWallet extends Wallet {
 	public static final String JSON_TECHNOLOGY = "technology";
 	public static final String JSON_NETWORK = "network";
 
-	public static final String JSON_MNEMONIC = "mnemonic";
 	public static final String JSON_SEED = "seed";
 	public static final String JSON_IV = "iv";
 	public static final String JSON_ENCRYPTED = "encrypted";
 	public static final String JSON_ADDRESS = "address";
 
-	public IotaWallet(File file, String passPhrase) throws Exception {
-		super(file, passPhrase);
+	public IotaWallet(File file, List<String> mnemonicWords, String passPhrase) throws Exception {
+		super(file, mnemonicWords, passPhrase);
 	}
-	
+
 	public IotaWallet(List<String> mnemonicWords, String passPhrase, Network network) {
 		this(mnemonicWords, passPhrase, ProtocolFactory.getInstance(Technology.Iota, network));
 	}
@@ -45,7 +44,6 @@ public class IotaWallet extends Wallet {
 				Account account = getAccount();
 				Protocol protocol = account.getProtocol();
 				Network network = protocol.getNetwork();
-				String mnemonic = Mnemonic.convert(getMnemonicWords());
 				String seed = account.getSecret();
 				String passPhrase = getPassPhrase();
 				boolean encrypted = false;
@@ -57,8 +55,7 @@ public class IotaWallet extends Wallet {
 					try {
 						AesUtility aes = new AesUtility(passPhrase);
 						encrypted = true;
-						
-						obj.put(JSON_MNEMONIC, aes.encrypt(mnemonic));
+
 						obj.put(JSON_SEED, aes.encrypt(seed));
 						obj.put(JSON_IV, aes.getIv());
 					}
@@ -67,7 +64,6 @@ public class IotaWallet extends Wallet {
 					}
 				}
 				else {
-					obj.put(JSON_MNEMONIC, mnemonic);
 					obj.put(JSON_SEED, seed);
 				}
 
@@ -86,7 +82,7 @@ public class IotaWallet extends Wallet {
 	}
 
 	@Override
-	protected void restoreWallet(String jsonString, String passPhrase) throws Exception {
+	protected void restoreWallet(String jsonString, List<String> mnemonicWords, String passPhrase) throws Exception {
 		if(jsonString.isEmpty()) {
 			throw new JSONException("Empty wallet file");
 		}
@@ -98,32 +94,27 @@ public class IotaWallet extends Wallet {
 		if(!node.has(JSON_VERSION)) {
 			throw new JSONException("Wallet file has no version attribute");
 		}
-		
+
 		if(!JSON_VERSION_VALUE.equals(node.getString(JSON_VERSION))) {
 			throw new JSONException("Wallet file has unkonwn version attribute. Expected value: " + JSON_VERSION_VALUE);
 		}
-		
+
 		// check and extract protocol
 		if(!node.has(JSON_TECHNOLOGY)) {
 			throw new JSONException("Wallet file has no technology attribute");
 		}
-		
+
 		if(!Technology.Iota.name().equals(node.getString(JSON_TECHNOLOGY))) {
 			throw new JSONException("Wallet file has unexpected technology attribute. Expected value: " + Technology.Iota.name());
 		}
-		
+
 		if(!node.has(JSON_NETWORK)) {
 			throw new JSONException("Wallet file has no network attribute");
 		}
-				
+
 		// check and extract seed
 		if(!node.has(JSON_SEED)) {
 			throw new JSONException("Wallet file has no seed attribute");
-		}
-
-		// check and extract mnemonic
-		if(!node.has(JSON_MNEMONIC)) {
-			throw new JSONException("Wallet file has no mnemonic attribute");
 		}
 
 		if(!node.has(JSON_ADDRESS)) {
@@ -133,41 +124,45 @@ public class IotaWallet extends Wallet {
 		if(!node.has(JSON_ENCRYPTED)) {
 			throw new JSONException("Wallet file has no encrypted attribute");
 		}
-		
+
 		String address = node.getString(JSON_ADDRESS);
-		List<String> mnemonic = null;
 		String seed = null;
-		
+
 		// get mnemonic and seed
 		if(node.getBoolean(JSON_ENCRYPTED)) {
 			if(!node.has(JSON_IV)) {
 				throw new JSONException("Wallet file has no iv attribute (required for encrypted seed)");
 			}
-			
+
 			AesUtility aes = new AesUtility(passPhrase);
 			String iv = node.getString(JSON_IV);
-			
-			mnemonic = Mnemonic.convert(aes.decrypt(node.getString(JSON_MNEMONIC), iv));
-			seed = aes.decrypt(node.getString(JSON_SEED), iv);
+			String seedEncrypted = node.getString(JSON_SEED);
+
+			System.out.println("SYSOUT encrypted: true");
+			System.out.println("SYSOUT pass phrase: " + passPhrase);
+			System.out.println("SYSOUT seed encrypted: " + seedEncrypted);
+			System.out.println("SYSOUT iv: " + iv);
+
+			seed = aes.decrypt(seedEncrypted, iv);
 		}
 		else {
-			mnemonic = Mnemonic.convert(node.getString(JSON_MNEMONIC));
 			seed = node.getString(JSON_SEED);
 		}
-		
-		System.out.println("SYSOUT seed: " + seed);
-		System.out.println("SYSOUT mnemonic: " + mnemonic);
-		
+
 		Network network = Network.get(node.getString(JSON_NETWORK));
 		Protocol protocol = ProtocolFactory.getInstance(Technology.Iota, network);
-		Account walletAccount = protocol.restoreAccount(mnemonic, passPhrase);
-		
-		if(!walletAccount.getAddress().equals(address)) {
-			throw new JSONException("Wallet address mismatch. Expected value" + walletAccount.getAddress());
+
+		String addressFromSeed = Iota.deriveAddressFromSeed(seed);
+
+		if(mnemonicWords != null) {
+			System.out.println("SYSOUT mnemonic: " + Mnemonic.convert(mnemonicWords));
 		}
-		
-		if(!walletAccount.getSecret().equals(seed)) {
-			throw new JSONException("Wallet seed mismatch. Expected value" + walletAccount.getSecret());
+
+		System.out.println("SYSOUT seed: " + seed);
+		System.out.println("SYSOUT address: " + addressFromSeed);
+
+		if(!address.equals(addressFromSeed)) {
+			throw new JSONException("Wallet address mismatch. Expected value from seed" + addressFromSeed);
 		}
 	}
 }

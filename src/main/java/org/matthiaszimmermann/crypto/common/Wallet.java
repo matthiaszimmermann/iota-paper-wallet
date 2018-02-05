@@ -25,7 +25,7 @@ public abstract class Wallet {
 		restoreAccount();
 	}
 	
-	public Wallet(File file, String passPhrase) throws Exception {
+	public Wallet(File file, List<String> mnemonicWords, String passPhrase) throws Exception {
 		processPassPhrase(passPhrase);
 		restoreWallet(file);
 	}
@@ -64,13 +64,13 @@ public abstract class Wallet {
 			throw new IOException(String.format("File '%s' does not exist (or path is a directory)", file.getAbsolutePath()));
 		}
 		
-		restoreWallet(FileUtility.readTextFile(file), passPhrase);
+		restoreWallet(FileUtility.readTextFile(file), mnemonicWords, passPhrase);
 	}
 
 	/**
 	 * Restores the wallet from the provided wallet file content and pass phrase
 	 */
-	protected abstract void restoreWallet(String fileContent, String passPhrase) throws Exception;
+	protected abstract void restoreWallet(String fileContent, List<String> mnemonicWords, String passPhrase) throws Exception;
 
 	public List<String> getMnemonicWords() {
 		return mnemonicWords;

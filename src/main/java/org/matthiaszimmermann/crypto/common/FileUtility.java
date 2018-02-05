@@ -23,7 +23,7 @@ public class FileUtility {
 			throw new RuntimeException("Failed to read content from text file " + fileName, e);
 		}
 	}
-	
+
 	public static String readTextFile(File file) {
 		StringBuilder sb = new StringBuilder();
 
@@ -45,7 +45,19 @@ public class FileUtility {
 		return sb.toString();
 	}
 
-	public static void saveToFile(String buf, String fileName) {		
+	public static void saveToFile(String buf, String fileName) {
+		boolean overwrite = false;
+		saveToFile(buf, fileName, overwrite);
+	}
+	
+	public static void saveToFile(byte [] buf, String fileName) {
+		boolean overwrite = false;
+		saveToFile(buf, fileName, overwrite);
+	}
+	
+	public static void saveToFile(String buf, String fileName, boolean overwrite) {
+		verifyFileExists(fileName, overwrite);
+		
 		try(PrintWriter out = new PrintWriter(fileName)) {
 			out.println(buf);
 		}
@@ -54,12 +66,26 @@ public class FileUtility {
 		}
 	}
 
-	public static void saveToFile(byte [] buf, String fileName) {
+	public static void saveToFile(byte [] buf, String fileName, boolean overwrite) {
+		verifyFileExists(fileName, overwrite);
+		
 		try (FileOutputStream fos = new FileOutputStream(fileName)) {
 			fos.write(buf);
 		}
 		catch(Exception e) {
 			throw new RuntimeException("Failed to write content to file " + fileName, e);
+		}
+	}
+	
+	private static void verifyFileExists(String fileName, boolean overwrite) {
+		if(overwrite) {
+			return;
+		}
+		
+		File file = new File(fileName);
+		
+		if(file.exists()) {
+			throw new RuntimeException(String.format("File %s already exits. Not writing anythiong", fileName));
 		}
 	}
 

@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.util.Arrays;
 import org.matthiaszimmermann.crypto.common.Account;
+import org.matthiaszimmermann.crypto.common.AesUtility;
 import org.matthiaszimmermann.crypto.common.Entropy;
 import org.matthiaszimmermann.crypto.common.Mnemonic;
 import org.matthiaszimmermann.crypto.common.Network;
@@ -131,6 +132,21 @@ public class DummyApplication {
 		System.out.println("API address expected: " + expectedAddress);
 		System.out.println("API address actual:   " + account.getAddress() + " match=" + expectedAddress.equals(account.getAddress()));
 		System.out.println("------------------------------");
+		
+		try {
+			AesUtility aes = new AesUtility(passPhrase);
+			String seedEncrypted = aes.encrypt(expectedSeed);
+			String iv = aes.getIv();
+			AesUtility aes2 = new AesUtility(passPhrase);
+			String seedDecrypted = aes2.decrypt(seedEncrypted, iv);
+			
+			System.out.println("API seed encrypted:    " + seedEncrypted);
+			System.out.println("API seed decrypted:    " + seedDecrypted + " match=" + expectedSeed.equals(seedDecrypted));
+			System.out.println("------------------------------");
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		
 		try {
 			TimeUnit.MILLISECONDS.sleep(10);

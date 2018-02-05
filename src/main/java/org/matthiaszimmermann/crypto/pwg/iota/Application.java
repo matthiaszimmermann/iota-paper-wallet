@@ -2,9 +2,9 @@ package org.matthiaszimmermann.crypto.pwg.iota;
 
 import java.io.File;
 import java.util.List;
-import java.util.Scanner;
 
 import org.matthiaszimmermann.crypto.common.FileUtility;
+import org.matthiaszimmermann.crypto.common.Mnemonic;
 import org.matthiaszimmermann.crypto.common.Network;
 import org.matthiaszimmermann.crypto.common.Protocol;
 import org.matthiaszimmermann.crypto.common.ProtocolFactory;
@@ -19,6 +19,7 @@ public class Application {
 
 	public static final String COMMAND_NAME = "java -jar bpgw.jar";
 	public static final String SWITCH_DIRECTORY = "-d";
+	public static final String SWITCH_MNEMONIC = "-m";
 	public static final String SWITCH_PASS_PHRASE = "-p";
 	public static final String SWITCH_VERIFY = "-v";
 
@@ -33,6 +34,9 @@ public class Application {
 
 	@Parameter(names = {SWITCH_DIRECTORY, "--target-directory"}, description = "target directory for wallet file etc.")
 	private String targetDirectory = Wallet.DEFAULT_PATH_TO_DIRECTORY;
+
+	@Parameter(names = {SWITCH_MNEMONIC, "--mnemonic"}, description = "mnemonic sentence for the wallet file")
+	private String mnemonic;
 
 	@Parameter(names = {SWITCH_PASS_PHRASE, "--pass-phrase"}, description = "pass phrase for the wallet file")
 	private String passPhrase;
@@ -63,7 +67,9 @@ public class Application {
 	}
 
 	public String createWalletFile() {
-		List<String> mnemonicWords = null;
+		log("creating wallet file ...");
+		
+		List<String> mnemonicWords = mnemonic == null ? null : Mnemonic.convert(mnemonic);
 		Protocol protocol = null;
 		Wallet wallet = null;
 
@@ -72,6 +78,11 @@ public class Application {
 			protocol = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
 			wallet = WalletFactory.getInstance(mnemonicWords, passPhrase, protocol);
 			wallet.setPathToDirectory(targetDirectory);
+			
+			log("mnemonic: " + Mnemonic.convert(wallet.getMnemonicWords()));
+			log("seed: " + wallet.getAccount().getSecret());
+			log("address: " + wallet.getAccount().getAddress());
+			
 		}
 		catch(Exception e) {
 			return String.format("%s %s", CRATE_ERROR, e.getMessage());
@@ -79,12 +90,7 @@ public class Application {
 
 		String jsonFile = wallet.getAbsolutePath();
 		FileUtility.saveToFile(wallet.toString(), jsonFile);
-		log("wallet in json format:\n" + wallet.toJson().toString(2));
-		log("wallet in json format, single line:\n" + wallet.toJson().toString());
-
-		log("wallet file successfully created");
-		log(String.format("wallet pass phrase: '%s'", wallet.getPassPhrase()));
-		log(String.format("wallet file location: %s", jsonFile));
+		log(String.format("wallet file %s successfully created", jsonFile));
 
 		String html = WalletPageUtility.createHtml(wallet);
 		byte [] qrCode = QrCodeUtility.contentToPngBytes(wallet.getAccount().getAddress(), 256);
@@ -94,48 +100,28 @@ public class Application {
 		String htmlFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_HTML);
 		String pngFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_PNG);
 
-		log("writing additional output files ...");
+		log("writing html and png output files ...");
 		FileUtility.saveToFile(html, htmlFile);
 		FileUtility.saveToFile(qrCode, pngFile);
-		log(String.format("html wallet: %s", htmlFile));
-		log(String.format("address qr code: %s", pngFile));
 
 		return String.format("%s %s", CREATE_OK, wallet.getAbsolutePath());
 	}
 
 	public String verifyWalletFile() {
-		if(passPhrase == null) {
-			Scanner scanner = new Scanner(System.in);
-
-			//  prompt for the user's name
-			System.out.print("wallet pass phrase: ");
-
-			// get their input as a String
-			passPhrase = scanner.next();
-			scanner.close();
-		}
-
 		log("verifying wallet file ...");
+		
 		Protocol protocol = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
 		File file = new File(walletFile);
 		
 		try {
-			WalletFactory.getInstance(file, passPhrase, protocol);
-			
-			log("wallet file successfully verified");
-			log("wallet file: " + walletFile);
-			log("pass phrase: " + passPhrase);
-			
+			List<String> mnemonicWords = mnemonic == null ? null : Mnemonic.convert(mnemonic);
+			WalletFactory.getInstance(file, mnemonicWords, passPhrase, protocol);
+			log("wallet verification successful");
 			return VERIFY_OK;
 		} 
 		catch (Exception e) {
-			String errorMessage = e.getMessage();
-			
-			log("verification failed: " + errorMessage);
-			log("wallet file: " + walletFile);
-			log("pass phrase: " + passPhrase);
-			
-			return String.format("%s %s", VERIFY_ERROR, errorMessage);
+			log("verification failed: " + e.getLocalizedMessage());
+			return VERIFY_ERROR + " " + e.getLocalizedMessage();
 		}
 	}
 

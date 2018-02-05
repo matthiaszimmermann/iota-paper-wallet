@@ -22,7 +22,11 @@ public class WalletFactory {
 		}
 	}
 	
-	public static Wallet getInstance(File file, String passPhrase, Protocol protocol) throws Exception {
+	public static Wallet getInstance(File file, List<String> mnemonicWords, String passPhrase, Protocol protocol) throws Exception {
+		
+		if(mnemonicWords == null && passPhrase == null) {
+			throw new IllegalArgumentException("Either mhemonics or pass phrase needs to be specified");
+		}
 		
 		if(protocol == null) {
 			throw new IllegalArgumentException("Protocol must not be null");
@@ -32,7 +36,7 @@ public class WalletFactory {
 		
 		switch(protocol.getTechnology()) {
 		case Iota: 
-			return new IotaWallet(file, passPhrase);
+			return new IotaWallet(file, mnemonicWords, passPhrase);
 		default:
 			throw new IllegalArgumentException(String.format("Technology %s is currently not supported", technology));
 		}
