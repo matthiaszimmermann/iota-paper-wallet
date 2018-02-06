@@ -144,7 +144,7 @@ public class Mnemonic {
 	 * Concatenates words to a space separated string.
 	 */
 	public static String convert(List<String> words) {
-		return String.join(" ", words);
+		return words == null ? null : String.join(" ", words);
 	}
 	
 	/**

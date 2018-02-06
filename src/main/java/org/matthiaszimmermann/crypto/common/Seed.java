@@ -5,6 +5,8 @@ import java.util.Random;
 
 /**
  * @author mzi
+ * TODO check if this class should be deleted. 
+ * move protocol specific implementations to corresponding protocol class
  */
 public class Seed {
 

@@ -52,7 +52,11 @@ public class Application {
 
 	public static void main(String[] args) throws Exception {
 		Application app = new Application();
-		app.run(args);
+		String result = app.run(args);
+		
+		if(result.startsWith(CRATE_ERROR) || result.startsWith(VERIFY_ERROR)) {
+			throw new IllegalArgumentException(result);
+		}
 	}
 
 	public String run(String [] args) {
@@ -78,11 +82,6 @@ public class Application {
 			protocol = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
 			wallet = WalletFactory.getInstance(mnemonicWords, passPhrase, protocol);
 			wallet.setPathToDirectory(targetDirectory);
-			
-			log("mnemonic: " + Mnemonic.convert(wallet.getMnemonicWords()));
-			log("seed: " + wallet.getAccount().getSecret());
-			log("address: " + wallet.getAccount().getAddress());
-			
 		}
 		catch(Exception e) {
 			return String.format("%s %s", CRATE_ERROR, e.getMessage());
@@ -90,6 +89,8 @@ public class Application {
 
 		String jsonFile = wallet.getAbsolutePath();
 		FileUtility.saveToFile(wallet.toString(), jsonFile);
+		
+		logWalletInfo(wallet);
 		log(String.format("wallet file %s successfully created", jsonFile));
 
 		String html = WalletPageUtility.createHtml(wallet);
@@ -115,14 +116,25 @@ public class Application {
 		
 		try {
 			List<String> mnemonicWords = mnemonic == null ? null : Mnemonic.convert(mnemonic);
-			WalletFactory.getInstance(file, mnemonicWords, passPhrase, protocol);
+			Wallet wallet = WalletFactory.getInstance(file, mnemonicWords, passPhrase, protocol);
 			log("wallet verification successful");
+			logWalletInfo(wallet);
 			return VERIFY_OK;
 		} 
 		catch (Exception e) {
 			log("verification failed: " + e.getLocalizedMessage());
 			return VERIFY_ERROR + " " + e.getLocalizedMessage();
 		}
+	}
+
+	private void logWalletInfo(Wallet wallet) {
+		String passPhrase = wallet.getPassPhrase();
+		log("file: " + wallet.getAbsolutePath());
+		log("encrypted: " + (passPhrase != null && passPhrase.length() > 0));
+		log("pass phrase: " + passPhrase);
+		log("mnemonic: " + Mnemonic.convert(wallet.getMnemonicWords()));
+		log("seed: " + wallet.getAccount().getSecret());
+		log("address: " + wallet.getAccount().getAddress());
 	}
 
 	private void parseCommandLine(String [] args) {
