@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.pwg.iota;
+package org.matthiaszimmermann.crypto.utility;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -21,6 +21,10 @@ public class QrCodeUtility {
 	public static final String ENCODING_TYPE = "UTF-8";
 
 	public static byte[] contentToPngBytes(String content, int size) {
+		if(content == null || content.length() == 0) {
+			return new byte [] {};
+		}
+		
 		try {
 			Map<EncodeHintType, Object> hintMap = new EnumMap<EncodeHintType, Object>(EncodeHintType.class);
 			hintMap.put(EncodeHintType.MARGIN, 0);

@@ -3,6 +3,9 @@ package org.matthiaszimmermann.crypto.common;
 import java.io.File;
 import java.util.List;
 
+import org.matthiaszimmermann.crypto.bitcoin.BitcoinWallet;
+import org.matthiaszimmermann.crypto.iota.IotaWallet;
+
 public class WalletFactory {
 
 	public static Wallet getInstance(List<String> mnemonicWords, String passPhase, Protocol protocol) {
@@ -11,12 +14,18 @@ public class WalletFactory {
 			throw new IllegalArgumentException("Protocol must not be null");
 		}
 		
+		if(mnemonicWords == null) {
+			throw new IllegalArgumentException("Mnemonic words must not be null");
+		}
+		
 		Technology technology = protocol.getTechnology();
 		Network network = protocol.getNetwork();
 		
 		switch(technology) {
 		case Iota: 
 			return new IotaWallet(mnemonicWords, passPhase, network);
+		case Bitcoin: 
+			return new BitcoinWallet(mnemonicWords, passPhase, network);
 		default:
 			throw new IllegalArgumentException(String.format("Technology %s is currently not supported", technology));
 		}

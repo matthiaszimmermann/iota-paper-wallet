@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.utility;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -37,7 +37,7 @@ public class AesUtility {
 		this(passPhrase, SALT, ITERATION_COUNT, KEY_STRENGTH);
 	}
 	
-	AesUtility(String passPhrase, byte [] salt, int iterationCount, int keyStrength) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidParameterSpecException {
+	public AesUtility(String passPhrase, byte [] salt, int iterationCount, int keyStrength) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidParameterSpecException {
 		SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 		KeySpec spec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount, keyStrength);
 		SecretKey secret = factory.generateSecret(spec);

@@ -13,16 +13,18 @@ public abstract class Wallet {
 
 	private List<String> mnemonicWords = null;
 	private String passPhrase = null;
-	private Protocol protocol = null;
+	
+	// TODO get rid of this member as this is already contained in account member
+	// private Protocol protocol = null;
 
 	private Account account = null;
 	private String pathToDirectory = DEFAULT_PATH_TO_DIRECTORY;
 
 	protected Wallet(List<String> mnemonicWords, String passPhrase, Protocol protocol) {
 		processProtocol(protocol);
-		processMnemonicWords(mnemonicWords);
 		processPassPhrase(passPhrase);
-		restoreAccount();
+		processMnemonicWords(mnemonicWords, protocol);
+		restoreAccount(protocol);
 	}
 	
 	public Wallet(File file, List<String> mnemonicWords, String passPhrase) throws Exception {
@@ -35,10 +37,11 @@ public abstract class Wallet {
 			throw new IllegalArgumentException("Protocol must not be null");
 		}
 
-		protocol = p;
+		// TODO cleanup
+		// protocol = p;
 	}
 
-	protected void processMnemonicWords(List<String> mw) {
+	protected void processMnemonicWords(List<String> mw, Protocol protocol) {
 		if(mw == null || mw.size() == 0) {
 			mnemonicWords = protocol.generateMnemonicWords();
 		}
@@ -53,7 +56,7 @@ public abstract class Wallet {
 		passPhrase = pp;
 	}
 
-	private void restoreAccount() {
+	private void restoreAccount(Protocol protocol) {
 		account = protocol.restoreAccount(mnemonicWords, passPhrase);
 	}
 	
@@ -76,13 +79,15 @@ public abstract class Wallet {
 	public List<String> getMnemonicWords() {
 		return mnemonicWords;
 	}
+	
+	public abstract String getSeed();
 
 	public String getPassPhrase() {
 		return passPhrase;
 	}
 
 	public Protocol getProtocol() {
-		return protocol;
+		return account.getProtocol();
 	}
 
 	public Account getAccount() {
@@ -139,8 +144,38 @@ public abstract class Wallet {
 	 * @throws Exception 
 	 */
 	public String toString() {
-		return toJson().toString();
+		return toJson().toString().replace(",\"", ", \"");
 	}
 	
-	// TODO implement default equals method (and use it for wallet file verification)
+	@Override
+	public boolean equals(Object obj) {
+		if(obj == null) {
+			return false;
+		}
+		
+		if(!(obj instanceof Wallet)) {
+			return false;
+		}
+		
+		Wallet other = (Wallet)obj;
+		
+		if(mnemonicWords != null && !mnemonicWords.equals(other.mnemonicWords)) {
+			return false;
+		} 
+		
+		if(passPhrase != null && !passPhrase.equals(other.passPhrase)) {
+			return false;
+		}
+		
+		return account.equals(other.account);
+	}
+	
+	@Override
+	public int hashCode() {
+		int mHash = mnemonicWords == null ? 0 : Mnemonic.convert(mnemonicWords).hashCode();
+		int pHash = passPhrase == null ? 0 : passPhrase.hashCode();
+		int aHash = account == null ? 0 : account.hashCode();
+		
+		return mHash | pHash | aHash;
+	}
 }

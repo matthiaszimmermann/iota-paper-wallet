@@ -1,7 +1,8 @@
-package org.matthiaszimmermann.crypto.pwg.iota;
+package org.matthiaszimmermann.crypto.utility;
 
 import org.matthiaszimmermann.crypto.common.FileUtility;
 import org.matthiaszimmermann.crypto.common.Mnemonic;
+import org.matthiaszimmermann.crypto.common.Technology;
 import org.matthiaszimmermann.crypto.common.Wallet;
 
 public class WalletPageUtility extends HtmlUtility {
@@ -10,8 +11,8 @@ public class WalletPageUtility extends HtmlUtility {
 	public static final String VERSION = "0.1.0-SNAPSHOT";
 	public static final String REPOSITORY = "https://github.com/matthiaszimmermann/TODO";
 
-	public static final String TITLE = "Iota Paper Wallet";
-	public static final String LOGO = "/iota_logo.png"; 
+	public static final String TITLE = "%s Paper Wallet";
+	public static final String LOGO = "/%s_logo.png"; 
 	
 	public static final String CSS_CLEARFIX = "clearfix";
 	public static final String CSS_ADDRESS_ROW = "address-row";
@@ -22,6 +23,7 @@ public class WalletPageUtility extends HtmlUtility {
 	public static final String CSS_CAPTION = "caption";
 	public static final String CSS_FOOTER = "footer-content";
 	public static final String CSS_IMG_ADDRESS = "img-address";
+	public static final String CSS_IMG_SECRET = "img-secret";
 	public static final String CSS_IMG_WALLET = "img-wallet";
 	
 	public static final String [] CSS_STYLES = {
@@ -32,43 +34,48 @@ public class WalletPageUtility extends HtmlUtility {
 			String.format(".%s { float:left; padding: 15px; }", CSS_COLUMN), 
 			String.format(".%s { overflow:auto; padding:15px; }", CSS_FILL),
 			String.format(".%s { height:256px; background-color:#fff; }", CSS_NOTES),
-			String.format(".%s { padding:15px; background-color:#efefef; font-family:monospace; }", CSS_CONTENT),
+			String.format(".%s { padding:15px; background-color:#efefef; font-family:monospace; word-wrap: break-word; }", CSS_CONTENT),
 			String.format(".%s { margin-bottom:6px; font-size:smaller;}", CSS_CAPTION),
 			String.format(".%s { font-size:small; }", CSS_FOOTER),
 			String.format(".%s { display:block; height:256px; }", CSS_IMG_ADDRESS),
+			String.format(".%s { display:block; height:256px; margin-top: -12px; margin-left: -12px; position: relative; z-index: -1;}", CSS_IMG_SECRET),
 			String.format(".%s { display:block; height:400px }", CSS_IMG_WALLET),
 			"}",
 			"@media print {",
 			String.format(".%s { float:left; padding:8pt; }", CSS_COLUMN), 
 			String.format(".%s { overflow:auto; padding:8pt; }", CSS_FILL),
 			String.format(".%s { height:100pt; border-style:solid; border-width:1pt; }", CSS_NOTES),
-			String.format(".%s { background-color:#efefef; font-family:monospace; font-size:6pt}", CSS_CONTENT),
+			String.format(".%s { background-color:#efefef; font-family:monospace; font-size:6pt; word-wrap: break-word; }", CSS_CONTENT),
 			String.format(".%s { margin-top:2pt; font-size:smaller;}", CSS_CAPTION),
 			String.format(".%s { font-size:6pt; }", CSS_FOOTER),
 			String.format(".%s { display:block; height:100pt; }", CSS_IMG_ADDRESS),
+			String.format(".%s { display:block; height:100pt; margin-top: -5pt; margin-left: -5pt; position: relative; z-index: -1;}", CSS_IMG_SECRET),
 			String.format(".%s { display:block; height:180pt }", CSS_IMG_WALLET),
 			"}",
 	};
 
 	public static String createHtml(Wallet wallet) {
+		Technology technology = wallet.getProtocol().getTechnology();
 		String address = wallet.getAccount().getAddress();
+		String seed = wallet.getSeed();
 		String walletFileContent = wallet.toString();
 		
-		byte [] logo = FileUtility.getResourceAsBytes(LOGO);
+		byte [] logo = FileUtility.getResourceAsBytes(getLogo(technology));
 		byte [] addressQrCode = QrCodeUtility.contentToPngBytes(address, 256);
+		byte [] secretQrCode = QrCodeUtility.contentToPngBytes(seed, 256);
 		byte [] walletQrCode = QrCodeUtility.contentToPngBytes(walletFileContent, 400);
 		
 		StringBuffer html = new StringBuffer();
 		
 		// header
 		HtmlUtility.addOpenElements(html, HtmlUtility.HTML, HtmlUtility.HEAD);
-		HtmlUtility.addTitle(html, TITLE);
+		HtmlUtility.addTitle(html, getTitle(technology));
 		HtmlUtility.addStyles(html, CSS_STYLES);
 		HtmlUtility.addCloseElements(html, HtmlUtility.HEAD);
 
 		// body
 		HtmlUtility.addOpenElements(html, HtmlUtility.BODY);
-		HtmlUtility.addHeader2(html, TITLE);
+		HtmlUtility.addHeader2(html, getTitle(technology));
 		
 		// add 1st row
 		HtmlUtility.addOpenDiv(html, CSS_CLEARFIX, CSS_ADDRESS_ROW);
@@ -95,6 +102,35 @@ public class WalletPageUtility extends HtmlUtility {
 		
 		// add 2nd row
 		HtmlUtility.addOpenDiv(html, CSS_CLEARFIX);
+		
+		// qr code for seed		
+		HtmlUtility.addOpenDiv(html, CSS_COLUMN);
+		HtmlUtility.addParagraph(html, "Seed", CSS_CAPTION);
+		HtmlUtility.addEncodedImage(html, secretQrCode, 200, CSS_IMG_SECRET);
+		HtmlUtility.addCloseDiv(html);
+		
+		HtmlUtility.addOpenDiv(html, CSS_FILL);
+		
+		HtmlUtility.addParagraph(html, "Address", CSS_CAPTION);
+		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
+		HtmlUtility.addContent(html, address);
+		HtmlUtility.addCloseDiv(html);
+		
+		HtmlUtility.addParagraph(html, "Seed", CSS_CAPTION);
+		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
+		HtmlUtility.addContent(html, seed);
+		HtmlUtility.addCloseDiv(html);
+		
+		HtmlUtility.addParagraph(html, "Mnemonic", CSS_CAPTION);
+		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
+		HtmlUtility.addContent(html, Mnemonic.convert(wallet.getMnemonicWords()));
+		HtmlUtility.addCloseDiv(html);
+		
+		HtmlUtility.addCloseDiv(html);
+		HtmlUtility.addCloseDiv(html);
+		
+		// add 3rd row
+		HtmlUtility.addOpenDiv(html, CSS_CLEARFIX);
 
 		// qr code for wallet file		
 		HtmlUtility.addOpenDiv(html, CSS_COLUMN);
@@ -104,16 +140,6 @@ public class WalletPageUtility extends HtmlUtility {
 		
 		// address, pass phrase, wallet file, file name
 		HtmlUtility.addOpenDiv(html, CSS_FILL);
-		
-		HtmlUtility.addParagraph(html, "Address", CSS_CAPTION);
-		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
-		HtmlUtility.addContent(html, address);
-		HtmlUtility.addCloseDiv(html);
-		
-		HtmlUtility.addParagraph(html, "Mnemonic", CSS_CAPTION);
-		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
-		HtmlUtility.addContent(html, Mnemonic.convert(wallet.getMnemonicWords()));
-		HtmlUtility.addCloseDiv(html);
 		
 		HtmlUtility.addParagraph(html, "Pass Phrase", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
@@ -142,5 +168,13 @@ public class WalletPageUtility extends HtmlUtility {
 		HtmlUtility.addCloseElements(html, HtmlUtility.BODY, HtmlUtility.HTML);
 
 		return html.toString();
+	}
+	
+	private static String getLogo(Technology technology) {
+		return String.format(LOGO, technology.name().toLowerCase());
+	}
+	
+	private static String getTitle(Technology technology) {
+		return String.format(TITLE, technology.name());
 	}
 }

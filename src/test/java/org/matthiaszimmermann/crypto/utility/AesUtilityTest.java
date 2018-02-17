@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.utility;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -12,6 +12,8 @@ import java.io.IOException;
 import javax.crypto.SecretKey;
 
 import org.junit.Test;
+import org.matthiaszimmermann.crypto.common.BaseTest;
+import org.matthiaszimmermann.crypto.utility.AesUtility;
 
 public class AesUtilityTest extends BaseTest {
 	

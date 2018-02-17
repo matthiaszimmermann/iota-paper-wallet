@@ -1,10 +1,17 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.iota;
 
 import java.io.File;
 import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.matthiaszimmermann.crypto.common.Account;
+import org.matthiaszimmermann.crypto.common.Network;
+import org.matthiaszimmermann.crypto.common.Protocol;
+import org.matthiaszimmermann.crypto.common.ProtocolFactory;
+import org.matthiaszimmermann.crypto.common.Technology;
+import org.matthiaszimmermann.crypto.common.Wallet;
+import org.matthiaszimmermann.crypto.utility.AesUtility;
 
 public class IotaWallet extends Wallet {
 
@@ -30,6 +37,11 @@ public class IotaWallet extends Wallet {
 	protected IotaWallet(List<String> mnemonicWords, String passPhase, Protocol protocol) {
 		super(mnemonicWords, passPhase, protocol);
 	}
+	
+	@Override
+	public String getSeed() {
+		return getAccount().getSecret();
+	}
 
 	@Override
 	public JSONObject toJson() {
@@ -44,7 +56,7 @@ public class IotaWallet extends Wallet {
 				Account account = getAccount();
 				Protocol protocol = account.getProtocol();
 				Network network = protocol.getNetwork();
-				String seed = account.getSecret();
+				String seed = getSeed();
 				String passPhrase = getPassPhrase();
 				boolean encrypted = false;
 
@@ -151,8 +163,7 @@ public class IotaWallet extends Wallet {
 		}
 		
 		Network network = Network.get(node.getString(JSON_NETWORK));
-		Protocol protocol = ProtocolFactory.getInstance(Technology.Iota, network);
 		
-		return new IotaAccount(seed, address, protocol);
+		return new IotaAccount(seed, address, network);
 	}
 }

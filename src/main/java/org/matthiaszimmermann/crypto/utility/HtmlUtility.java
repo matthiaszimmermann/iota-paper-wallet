@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.pwg.iota;
+package org.matthiaszimmermann.crypto.utility;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

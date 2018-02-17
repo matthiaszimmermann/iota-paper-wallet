@@ -41,7 +41,7 @@
               </filters>
               <transformers>
                 <transformer>
-                  <mainClass>org.matthiaszimmermann.crypto.pwg.iota.Application</mainClass>
+                  <mainClass>org.matthiaszimmermann.crypto.Application</mainClass>
                 </transformer>
               </transformers>
             </configuration>
@@ -72,6 +72,7 @@
   </dependencies>
   <properties>
     <iota.lib.version>0.9.11-SNAPSHOT</iota.lib.version>
+    <bitcoin.lib.version>0.14.4</bitcoin.lib.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.target>1.8</maven.compiler.target>

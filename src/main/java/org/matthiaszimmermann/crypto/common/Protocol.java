@@ -7,7 +7,7 @@ public abstract class Protocol {
 	private Technology technology;
 	private Network network;
 	
-	protected Protocol(Technology technology, Network network) {
+	public Protocol(Technology technology, Network network) {
 		processTechnology(technology);
 		processNetwork(network);
 	}
@@ -41,4 +41,24 @@ public abstract class Protocol {
 	abstract public List<String> generateMnemonicWords();
 
 	abstract public void validateMnemonicWords(List<String> mnemonicWords);
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(obj == null) {
+			return false;
+		}
+		
+		if(!(obj instanceof Protocol)) {
+			return false;
+		}
+		
+		Protocol other = (Protocol)obj;
+		
+		return technology == other.technology && network == other.network;
+	}
+	
+	@Override
+	public int hashCode() {
+		return 1000 * technology.hashCode() + network.hashCode();
+	}
 }

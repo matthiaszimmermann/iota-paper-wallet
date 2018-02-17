@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.pwg.iota;
+package org.matthiaszimmermann.crypto;
 
 import java.io.File;
 import java.util.List;
@@ -11,6 +11,8 @@ import org.matthiaszimmermann.crypto.common.ProtocolFactory;
 import org.matthiaszimmermann.crypto.common.Technology;
 import org.matthiaszimmermann.crypto.common.Wallet;
 import org.matthiaszimmermann.crypto.common.WalletFactory;
+import org.matthiaszimmermann.crypto.utility.QrCodeUtility;
+import org.matthiaszimmermann.crypto.utility.WalletPageUtility;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -18,6 +20,7 @@ import com.beust.jcommander.Parameter;
 public class Application {
 
 	public static final String COMMAND_NAME = "java -jar bpgw.jar";
+	public static final String SWITCH_TECHNOLOGY = "-t";
 	public static final String SWITCH_DIRECTORY = "-d";
 	public static final String SWITCH_MNEMONIC = "-m";
 	public static final String SWITCH_PASS_PHRASE = "-p";
@@ -31,6 +34,9 @@ public class Application {
 
 	public static final String EXT_HTML = "html";
 	public static final String EXT_PNG = "png";
+
+	@Parameter(names = {SWITCH_TECHNOLOGY, "--technology"}, description = "technology: (default = Bitcoin)")
+	private String technology = Technology.Bitcoin.name();
 
 	@Parameter(names = {SWITCH_DIRECTORY, "--target-directory"}, description = "target directory for wallet file etc.")
 	private String targetDirectory = Wallet.DEFAULT_PATH_TO_DIRECTORY;
@@ -73,13 +79,12 @@ public class Application {
 	public String createWalletFile() {
 		log("creating wallet file ...");
 		
-		List<String> mnemonicWords = mnemonic == null ? null : Mnemonic.convert(mnemonic);
-		Protocol protocol = null;
+		Protocol protocol = ProtocolFactory.getInstance(Technology.get(technology), Network.Production);
+		List<String> mnemonicWords = mnemonic == null ? protocol.generateMnemonicWords() : Mnemonic.convert(mnemonic);
 		Wallet wallet = null;
 
-		// TODO add command line params to indicate technology and network
+		// TODO add command line params to indicate network
 		try {
-			protocol = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
 			wallet = WalletFactory.getInstance(mnemonicWords, passPhrase, protocol);
 			wallet.setPathToDirectory(targetDirectory);
 		}
