@@ -22,10 +22,10 @@ public class WalletFactory {
 		Network network = protocol.getNetwork();
 		
 		switch(technology) {
-		case Iota: 
-			return new IotaWallet(mnemonicWords, passPhase, network);
 		case Bitcoin: 
 			return new BitcoinWallet(mnemonicWords, passPhase, network);
+		case Iota: 
+			return new IotaWallet(mnemonicWords, passPhase, network);
 		default:
 			throw new IllegalArgumentException(String.format("Technology %s is currently not supported", technology));
 		}
@@ -44,6 +44,8 @@ public class WalletFactory {
 		Technology technology = protocol.getTechnology();
 		
 		switch(protocol.getTechnology()) {
+		case Bitcoin:
+			return new BitcoinWallet(file, mnemonicWords, passPhrase);
 		case Iota: 
 			return new IotaWallet(file, mnemonicWords, passPhrase);
 		default:

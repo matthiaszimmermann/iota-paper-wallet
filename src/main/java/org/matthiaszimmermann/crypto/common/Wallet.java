@@ -4,21 +4,22 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public abstract class Wallet {
 
+	public static final String JSON_VERSION = "version";
+	public static final String JSON_VERSION_VALUE = "1.0";
+	public static final String JSON_ACCOUNT = "account";
+
 	public static final String DEFAULT_PATH_TO_DIRECTORY = System.getProperty("user.home");
 	public static final String DEFAULT_FILE_EXTENSION = "json";
 
+	private String pathToDirectory = DEFAULT_PATH_TO_DIRECTORY;
 	private List<String> mnemonicWords = null;
 	private String passPhrase = null;
-	
-	// TODO get rid of this member as this is already contained in account member
-	// private Protocol protocol = null;
-
 	private Account account = null;
-	private String pathToDirectory = DEFAULT_PATH_TO_DIRECTORY;
 
 	protected Wallet(List<String> mnemonicWords, String passPhrase, Protocol protocol) {
 		processProtocol(protocol);
@@ -29,16 +30,19 @@ public abstract class Wallet {
 	
 	public Wallet(File file, List<String> mnemonicWords, String passPhrase) throws Exception {
 		processPassPhrase(passPhrase);
-		restoreAccount(file);
+		restore(file);
 	}
+
+	/**
+	 * Restores the wallet from the provided wallet file content and pass phrase
+	 * @return 
+	 */
+	protected abstract Account restore(File file, List<String> mnemonicWords, String passPhrase) throws Exception;
 
 	protected void processProtocol(Protocol p) {
 		if(p == null) {
 			throw new IllegalArgumentException("Protocol must not be null");
 		}
-
-		// TODO cleanup
-		// protocol = p;
 	}
 
 	protected void processMnemonicWords(List<String> mw, Protocol protocol) {
@@ -60,21 +64,19 @@ public abstract class Wallet {
 		account = protocol.restoreAccount(mnemonicWords, passPhrase);
 	}
 	
-	protected void restoreAccount(File file) throws Exception {
+	protected void restore(File file) throws Exception {
+
+		if(file == null) { 
+			throw new IllegalArgumentException("File parameter must not be null");
+		}
 		
 		// check if provided file exists
 		if(!file.exists() || file.isDirectory()) { 
 			throw new IOException(String.format("File '%s' does not exist (or path is a directory)", file.getAbsolutePath()));
 		}
 		
-		account = restoreAccount(FileUtility.readTextFile(file), mnemonicWords, passPhrase);
+		account = restore(file, mnemonicWords, passPhrase);
 	}
-
-	/**
-	 * Restores the wallet from the provided wallet file content and pass phrase
-	 * @return 
-	 */
-	protected abstract Account restoreAccount(String fileContent, List<String> mnemonicWords, String passPhrase) throws Exception;
 
 	public List<String> getMnemonicWords() {
 		return mnemonicWords;
@@ -135,7 +137,19 @@ public abstract class Wallet {
 	 * 
 	 * @throws Exception 
 	 */
-	public abstract JSONObject toJson();
+	public JSONObject toJson() {
+		try {
+			JSONObject obj = new JSONObject();
+
+			obj.put(JSON_VERSION, JSON_VERSION_VALUE);
+			obj.put(JSON_ACCOUNT, getAccount().toJson(getPassPhrase()));
+
+			return obj;
+		}
+		catch(JSONException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
 
 	/**
 	 * Returns content of wallet as String.

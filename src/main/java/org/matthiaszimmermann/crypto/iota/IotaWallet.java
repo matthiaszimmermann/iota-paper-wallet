@@ -6,6 +6,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.matthiaszimmermann.crypto.common.Account;
+import org.matthiaszimmermann.crypto.common.FileUtility;
 import org.matthiaszimmermann.crypto.common.Network;
 import org.matthiaszimmermann.crypto.common.Protocol;
 import org.matthiaszimmermann.crypto.common.ProtocolFactory;
@@ -44,57 +45,9 @@ public class IotaWallet extends Wallet {
 	}
 
 	@Override
-	public JSONObject toJson() {
-		try {
-			JSONObject obj = new JSONObject();
-
-			// add version info
-			obj.put(JSON_VERSION, JSON_VERSION_VALUE);
-
-			// add seed info
-			if(getAccount() != null) {
-				Account account = getAccount();
-				Protocol protocol = account.getProtocol();
-				Network network = protocol.getNetwork();
-				String seed = getSeed();
-				String passPhrase = getPassPhrase();
-				boolean encrypted = false;
-
-				obj.put(JSON_TECHNOLOGY, protocol.getTechnology());
-				obj.put(JSON_NETWORK, network.name());
-
-				if(passPhrase != null && passPhrase.length() > 0) {
-					try {
-						AesUtility aes = new AesUtility(passPhrase);
-						encrypted = true;
-
-						obj.put(JSON_SEED, aes.encrypt(seed));
-						obj.put(JSON_IV, aes.getIv());
-					}
-					catch (Exception e) {
-						new RuntimeException(e.getMessage());
-					}
-				}
-				else {
-					obj.put(JSON_SEED, seed);
-				}
-
-				// add encrypted info
-				obj.put(JSON_ENCRYPTED, encrypted);
-
-				// add address info
-				obj.put(JSON_ADDRESS, account.getAddress());
-			}
-
-			return obj;
-		}
-		catch(JSONException ex) {
-			throw new RuntimeException(ex);
-		}
-	}
-
-	@Override
-	protected Account restoreAccount(String jsonString, List<String> mnemonicWords, String passPhrase) throws Exception {
+	protected Account restore(File file, List<String> mnemonicWords, String passPhrase) throws Exception {
+		String jsonString = FileUtility.readTextFile(file);
+		
 		if(jsonString.isEmpty()) {
 			throw new JSONException("Empty wallet file");
 		}
@@ -108,7 +61,7 @@ public class IotaWallet extends Wallet {
 		}
 
 		if(!JSON_VERSION_VALUE.equals(node.getString(JSON_VERSION))) {
-			throw new JSONException("Wallet file has unkonwn version attribute. Expected value: " + JSON_VERSION_VALUE);
+			throw new JSONException("Wallet file has unkonwn version. Expected value: " + JSON_VERSION_VALUE);
 		}
 
 		// check and extract protocol

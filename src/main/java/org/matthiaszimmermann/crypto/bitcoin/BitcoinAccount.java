@@ -3,17 +3,15 @@ package org.matthiaszimmermann.crypto.bitcoin;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.HDKeyDerivation;
-import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.params.TestNet3Params;
-import org.bitcoinj.params.UnitTestParams;
+import org.bitcoinj.crypto.MnemonicCode;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import org.matthiaszimmermann.crypto.common.Account;
 import org.matthiaszimmermann.crypto.common.Network;
 
@@ -24,34 +22,30 @@ import org.matthiaszimmermann.crypto.common.Network;
  */
 public class BitcoinAccount extends Account {
 
+	private List<String> bip39seed;
 	private DeterministicKey dk;
-//	private ECKey ecKey = null;
 	
 	private List<Chain> chains = null;
 	
-	// TODO cleanup commented stuff
-//	private byte[] pubKey = null;
-//	private byte[] pubKeyHash = null;
-//
-//	private DeterministicKey aKey = null;
-//	private int	aID;
-//
-//	private String strXPUB = null;
-
 	public BitcoinAccount(String secret, String address, Network network) {
 		super(secret, address, new Bitcoin(network));
 	}
 
+
 	/**
 	 * Constructor for account.
 	 *
-	 * @param DeterministicKey rootKey deterministic key for this account
-	 * @param int child id within the wallet for this account
+	 * @param List<String> mnemonicWords the BIP39 seed word list for this HD account
 	 * @param NetworkParameters params
 	 */
-	public BitcoinAccount(DeterministicKey rootKey, int child, Network network) {
+	public BitcoinAccount(List<String> mnemonicWords, Network network) {
 		super(new Bitcoin(network));
-
+		
+		bip39seed = mnemonicWords;
+		
+		byte [] seed = MnemonicCode.toSeed(bip39seed, "");		
+		DeterministicKey rootKey = ((Bitcoin)getProtocol()).seedToRootKey(seed);
+		int child = rootKey.getChildNumber().num();
 		int childnum = child | ChildNumber.HARDENED_BIT;
         dk = HDKeyDerivation.deriveChildKey(rootKey, childnum);
         
@@ -60,27 +54,6 @@ public class BitcoinAccount extends Account {
         chains.add(new Chain(dk, false, network));
 	}
 	
-//
-//	/**
-//	 * Get pubKey as byte array.
-//	 *
-//	 * @return byte[]
-//	 *
-//	 */
-//	public byte[] getPubKey() {
-//		return pubKey;
-//	}
-//
-//	/**
-//	 * Get pubKeyHash as byte array.
-//	 *
-//	 * @return byte[]
-//	 *
-//	 */
-//	public byte[] getPubKeyHash() {
-//		return pubKeyHash;
-//	}
-
 	@Override
 	public String getAddress() {
 		Chain chain = getReceive();
@@ -96,8 +69,7 @@ public class BitcoinAccount extends Account {
 	 */
 	@Override
 	public String getSecret() {
-		// TODO implement or remove
-		return null;
+		return String.join(" ", bip39seed);
 	}
 	
 	
@@ -107,7 +79,7 @@ public class BitcoinAccount extends Account {
      * @return HD_Chain
      *
      */
-    public Chain getReceive() {
+    private Chain getReceive() {
         return chains.get(0);
     }
 
@@ -117,45 +89,28 @@ public class BitcoinAccount extends Account {
 	 * @return String
 	 *
 	 */
+    // TODO decide if method should be removed (what's the value of having access to path info?)
 	protected String getPath() {
 		return dk == null ? null : dk.getPathAsString();
 	}
 
-	/**
-	 * Write address to JSONObject.
-	 * For debugging only.
-	 *
-	 * @return JSONObject
-	 *
-	 */
-	public JSONObject toJson() {
-		return toJson(false);
-	}
-
-	private JSONObject toJson(boolean includeKey) {
+	@Override
+	public JSONObject toJson(String passPhrase) {
         try {
-            JSONObject obj = new JSONObject();
-
-            // TODO cleanup
-            // add keys
-//            if(aKey.hasPrivKey() && includeKey) {
-//                obj.put("path", getPath());
-//                obj.put("xpub", xpubstr());
-//                obj.put("xprv", xprvstr());
-//            }
-
-            // add chains
-            JSONArray chainsArray = new JSONArray();
-            for(Chain chain : chains)   {
-                chainsArray.put(chain.toJSON());
-            }
-            
-            obj.put("chains", chainsArray);
-
+            JSONObject obj = super.toJson(passPhrase);
+            obj.put("chains", chainsToJson());
             return obj;
         }
         catch(JSONException ex) {
             throw new RuntimeException(ex);
         }
     }
+
+	private JSONArray chainsToJson() {
+		JSONArray chainsArray = new JSONArray();
+		for(Chain chain : chains)   {
+		    chainsArray.put(chain.toJSON());
+		}
+		return chainsArray;
+	}
 }

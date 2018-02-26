@@ -6,14 +6,14 @@ import org.matthiaszimmermann.crypto.common.Technology;
 import org.matthiaszimmermann.crypto.common.Wallet;
 
 public class WalletPageUtility extends HtmlUtility {
-	
+
 	// TODO verify version with the one in the pom.xml
 	public static final String VERSION = "0.1.0-SNAPSHOT";
 	public static final String REPOSITORY = "https://github.com/matthiaszimmermann/TODO";
 
 	public static final String TITLE = "%s Paper Wallet";
 	public static final String LOGO = "/%s_logo.png"; 
-	
+
 	public static final String CSS_CLEARFIX = "clearfix";
 	public static final String CSS_ADDRESS_ROW = "address-row";
 	public static final String CSS_COLUMN = "column";
@@ -25,7 +25,7 @@ public class WalletPageUtility extends HtmlUtility {
 	public static final String CSS_IMG_ADDRESS = "img-address";
 	public static final String CSS_IMG_SECRET = "img-secret";
 	public static final String CSS_IMG_WALLET = "img-wallet";
-	
+
 	public static final String [] CSS_STYLES = {
 			"html * { font-family:Verdana, sans-serif; }",
 			String.format(".%s::after { content: \"\"; clear:both; display:table; }", CSS_CLEARFIX),
@@ -58,15 +58,16 @@ public class WalletPageUtility extends HtmlUtility {
 		Technology technology = wallet.getProtocol().getTechnology();
 		String address = wallet.getAccount().getAddress();
 		String seed = wallet.getSeed();
+		String mnemonic = Mnemonic.convert(wallet.getMnemonicWords());
 		String walletFileContent = wallet.toString();
-		
+
 		byte [] logo = FileUtility.getResourceAsBytes(getLogo(technology));
 		byte [] addressQrCode = QrCodeUtility.contentToPngBytes(address, 256);
 		byte [] secretQrCode = QrCodeUtility.contentToPngBytes(seed, 256);
 		byte [] walletQrCode = QrCodeUtility.contentToPngBytes(walletFileContent, 400);
-		
+
 		StringBuffer html = new StringBuffer();
-		
+
 		// header
 		HtmlUtility.addOpenElements(html, HtmlUtility.HTML, HtmlUtility.HEAD);
 		HtmlUtility.addTitle(html, getTitle(technology));
@@ -76,7 +77,7 @@ public class WalletPageUtility extends HtmlUtility {
 		// body
 		HtmlUtility.addOpenElements(html, HtmlUtility.BODY);
 		HtmlUtility.addHeader2(html, getTitle(technology));
-		
+
 		// add 1st row
 		HtmlUtility.addOpenDiv(html, CSS_CLEARFIX, CSS_ADDRESS_ROW);
 
@@ -84,13 +85,13 @@ public class WalletPageUtility extends HtmlUtility {
 		HtmlUtility.addOpenDiv(html, CSS_COLUMN);
 		HtmlUtility.addEncodedImage(html, logo, 256, CSS_IMG_ADDRESS);
 		HtmlUtility.addCloseDiv(html);
-		
+
 		// account address
 		HtmlUtility.addOpenDiv(html, CSS_COLUMN);
 		HtmlUtility.addEncodedImage(html, addressQrCode, 256, CSS_IMG_ADDRESS);
 		HtmlUtility.addParagraph(html, "QR Code Address", CSS_CAPTION);
 		HtmlUtility.addCloseDiv(html);
-		
+
 		// notes
 		HtmlUtility.addOpenDiv(html, CSS_FILL);
 		HtmlUtility.addOpenDiv(html, CSS_NOTES);
@@ -99,36 +100,38 @@ public class WalletPageUtility extends HtmlUtility {
 		HtmlUtility.addCloseDiv(html);
 
 		HtmlUtility.addCloseDiv(html);
-		
+
 		// add 2nd row
 		HtmlUtility.addOpenDiv(html, CSS_CLEARFIX);
-		
+
 		// qr code for seed		
 		HtmlUtility.addOpenDiv(html, CSS_COLUMN);
-		HtmlUtility.addParagraph(html, "Seed", CSS_CAPTION);
+		HtmlUtility.addParagraph(html, "QR Code Seed", CSS_CAPTION);
 		HtmlUtility.addEncodedImage(html, secretQrCode, 200, CSS_IMG_SECRET);
 		HtmlUtility.addCloseDiv(html);
-		
+
 		HtmlUtility.addOpenDiv(html, CSS_FILL);
-		
+
 		HtmlUtility.addParagraph(html, "Address", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, address);
 		HtmlUtility.addCloseDiv(html);
-		
+
 		HtmlUtility.addParagraph(html, "Seed", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, seed);
 		HtmlUtility.addCloseDiv(html);
-		
-		HtmlUtility.addParagraph(html, "Mnemonic", CSS_CAPTION);
-		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
-		HtmlUtility.addContent(html, Mnemonic.convert(wallet.getMnemonicWords()));
+
+		if(!seed.equals(mnemonic)) {
+			HtmlUtility.addParagraph(html, "Mnemonic", CSS_CAPTION);
+			HtmlUtility.addOpenDiv(html, CSS_CONTENT);
+			HtmlUtility.addContent(html, mnemonic);
+			HtmlUtility.addCloseDiv(html);
+		}
+
 		HtmlUtility.addCloseDiv(html);
-		
 		HtmlUtility.addCloseDiv(html);
-		HtmlUtility.addCloseDiv(html);
-		
+
 		// add 3rd row
 		HtmlUtility.addOpenDiv(html, CSS_CLEARFIX);
 
@@ -137,43 +140,43 @@ public class WalletPageUtility extends HtmlUtility {
 		HtmlUtility.addParagraph(html, "QR Code Wallet File", CSS_CAPTION);
 		HtmlUtility.addEncodedImage(html, walletQrCode, 500, CSS_IMG_WALLET);
 		HtmlUtility.addCloseDiv(html);
-		
+
 		// address, pass phrase, wallet file, file name
 		HtmlUtility.addOpenDiv(html, CSS_FILL);
-		
+
 		HtmlUtility.addParagraph(html, "Pass Phrase", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, wallet.getPassPhrase());
 		HtmlUtility.addCloseDiv(html);
-		
+
 		HtmlUtility.addParagraph(html, "File Content", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, walletFileContent);
 		HtmlUtility.addCloseDiv(html);
-		
+
 		HtmlUtility.addParagraph(html, "File Name", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, wallet.getFileName());
 		HtmlUtility.addCloseDiv(html);
-		
+
 		HtmlUtility.addCloseDiv(html);		
 		HtmlUtility.addCloseDiv(html);		
-		
+
 		// add footer content
 		String footer = String.format("Page created with Paper Wallet Generator [%s] V %s", REPOSITORY, VERSION);
 		HtmlUtility.addOpenFooter(html, CSS_FOOTER);
 		HtmlUtility.addContent(html, footer);
 		HtmlUtility.addCloseFooter(html);
-				
+
 		HtmlUtility.addCloseElements(html, HtmlUtility.BODY, HtmlUtility.HTML);
 
 		return html.toString();
 	}
-	
+
 	private static String getLogo(Technology technology) {
 		return String.format(LOGO, technology.name().toLowerCase());
 	}
-	
+
 	private static String getTitle(Technology technology) {
 		return String.format(TITLE, technology.name());
 	}

@@ -59,7 +59,7 @@ public class Application {
 	public static void main(String[] args) throws Exception {
 		Application app = new Application();
 		String result = app.run(args);
-		
+
 		if(result.startsWith(CRATE_ERROR) || result.startsWith(VERIFY_ERROR)) {
 			throw new IllegalArgumentException(result);
 		}
@@ -78,7 +78,7 @@ public class Application {
 
 	public String createWalletFile() {
 		log("creating wallet file ...");
-		
+
 		Protocol protocol = ProtocolFactory.getInstance(Technology.get(technology), Network.Production);
 		List<String> mnemonicWords = mnemonic == null ? protocol.generateMnemonicWords() : Mnemonic.convert(mnemonic);
 		Wallet wallet = null;
@@ -94,7 +94,7 @@ public class Application {
 
 		String jsonFile = wallet.getAbsolutePath();
 		FileUtility.saveToFile(wallet.toString(), jsonFile);
-		
+
 		logWalletInfo(wallet);
 		log(String.format("wallet file %s successfully created", jsonFile));
 
@@ -115,10 +115,10 @@ public class Application {
 
 	public String verifyWalletFile() {
 		log("verifying wallet file ...");
-		
+
 		Protocol protocol = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
 		File file = new File(walletFile);
-		
+
 		try {
 			List<String> mnemonicWords = mnemonic == null ? null : Mnemonic.convert(mnemonic);
 			Wallet wallet = WalletFactory.getInstance(file, mnemonicWords, passPhrase, protocol);
@@ -133,12 +133,18 @@ public class Application {
 	}
 
 	private void logWalletInfo(Wallet wallet) {
+		String seed = wallet.getAccount().getSecret();
+		String mnemonic = Mnemonic.convert(wallet.getMnemonicWords());
 		String passPhrase = wallet.getPassPhrase();
 		log("file: " + wallet.getAbsolutePath());
 		log("encrypted: " + (passPhrase != null && passPhrase.length() > 0));
 		log("pass phrase: " + passPhrase);
-		log("mnemonic: " + Mnemonic.convert(wallet.getMnemonicWords()));
-		log("seed: " + wallet.getAccount().getSecret());
+		
+		if(!mnemonic.equals(seed)) {
+			log("mnemonic: " + mnemonic);
+		}
+		
+		log("seed: " + seed);
 		log("address: " + wallet.getAccount().getAddress());
 	}
 

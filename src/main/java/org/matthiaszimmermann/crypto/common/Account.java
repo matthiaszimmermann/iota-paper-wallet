@@ -1,8 +1,17 @@
 package org.matthiaszimmermann.crypto.common;
 
 import org.json.JSONObject;
+import org.matthiaszimmermann.crypto.utility.AesUtility;
 
 public abstract class Account {
+
+	public static final String JSON_TECHNOLOGY = "technology";
+	public static final String JSON_NETWORK = "network";
+
+	public static final String JSON_ADDRESS = "address";
+	public static final String JSON_SECRET = "secret";
+	public static final String JSON_ENCRYPTED = "encrypted";
+	public static final String JSON_IV = "iv";
 
 	private String secret;
 	private String address;
@@ -21,13 +30,47 @@ public abstract class Account {
 	}
 	
 	/**
-	 * Write address to JSONObject.
-	 * For debugging only.
+	 * Convert account to JSONObject including private key/seed in plain text.
 	 *
 	 * @return JSONObject
-	 *
 	 */
-	public abstract JSONObject toJson();
+	public JSONObject toJson() {
+		return toJson(null);
+	}
+	
+	/**
+	 * Convert account to JSONObject including private key/seed in plain text.
+	 *
+	 * @return JSONObject
+	 */
+	public JSONObject toJson(String passPhrase) {
+        JSONObject obj = new JSONObject();
+        boolean encrypted = false;
+        
+		obj.put(JSON_TECHNOLOGY, getTechnology());
+		obj.put(JSON_NETWORK, getNetwork());
+        obj.put(JSON_ADDRESS, getAddress());
+		
+        if(passPhrase == null || passPhrase.length() == 0) {
+            obj.put("secret", getSecret());
+        }
+        else {
+			try {
+				AesUtility aes = new AesUtility(passPhrase);
+				encrypted = true;
+
+				obj.put(JSON_SECRET, aes.encrypt(getSecret()));
+				obj.put(JSON_IV, aes.getIv());
+			}
+			catch (Exception e) {
+				new RuntimeException(e.getMessage());
+			}
+        }
+
+        obj.put(JSON_ENCRYPTED, encrypted);
+        
+		return obj;
+	}
 
 	private void processAddress(String address) {
 		if(address == null) {
@@ -67,6 +110,10 @@ public abstract class Account {
 	
 	public Network getNetwork() {
 		return protocol == null ? null : protocol.getNetwork();
+	}	
+	
+	public Technology getTechnology() {
+		return protocol == null ? null : protocol.getTechnology();
 	}	
 	
 	@Override
