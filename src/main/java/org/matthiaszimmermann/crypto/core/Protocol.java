@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.core;
 
 import java.util.List;
 

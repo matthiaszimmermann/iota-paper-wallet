@@ -6,10 +6,10 @@ import java.io.IOException;
 import java.util.List;
 
 import org.junit.Test;
-import org.matthiaszimmermann.crypto.common.Account;
 import org.matthiaszimmermann.crypto.common.BaseTest;
-import org.matthiaszimmermann.crypto.common.Network;
-import org.matthiaszimmermann.crypto.common.Protocol;
+import org.matthiaszimmermann.crypto.core.Account;
+import org.matthiaszimmermann.crypto.core.Network;
+import org.matthiaszimmermann.crypto.core.Protocol;
 
 public class BitcoinAccountTest extends BaseTest {
 

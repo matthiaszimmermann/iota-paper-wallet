@@ -7,8 +7,7 @@ import org.bitcoinj.crypto.HDKeyDerivation;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import org.matthiaszimmermann.crypto.common.Network;
+import org.matthiaszimmermann.crypto.core.Network;
 
 /**
  *

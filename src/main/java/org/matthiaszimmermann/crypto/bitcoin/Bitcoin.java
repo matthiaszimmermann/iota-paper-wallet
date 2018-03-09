@@ -10,11 +10,10 @@ import org.bitcoinj.crypto.MnemonicCode;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.params.UnitTestParams;
-
-import org.matthiaszimmermann.crypto.common.Entropy;
-import org.matthiaszimmermann.crypto.common.Network;
-import org.matthiaszimmermann.crypto.common.Protocol;
-import org.matthiaszimmermann.crypto.common.Technology;
+import org.matthiaszimmermann.crypto.core.Entropy;
+import org.matthiaszimmermann.crypto.core.Network;
+import org.matthiaszimmermann.crypto.core.Protocol;
+import org.matthiaszimmermann.crypto.core.Technology;
 
 public class Bitcoin extends Protocol {
 

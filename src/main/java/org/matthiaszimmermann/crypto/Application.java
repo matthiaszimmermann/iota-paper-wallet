@@ -3,14 +3,14 @@ package org.matthiaszimmermann.crypto;
 import java.io.File;
 import java.util.List;
 
-import org.matthiaszimmermann.crypto.common.FileUtility;
-import org.matthiaszimmermann.crypto.common.Mnemonic;
-import org.matthiaszimmermann.crypto.common.Network;
-import org.matthiaszimmermann.crypto.common.Protocol;
-import org.matthiaszimmermann.crypto.common.ProtocolFactory;
-import org.matthiaszimmermann.crypto.common.Technology;
-import org.matthiaszimmermann.crypto.common.Wallet;
-import org.matthiaszimmermann.crypto.common.WalletFactory;
+import org.matthiaszimmermann.crypto.core.Mnemonic;
+import org.matthiaszimmermann.crypto.core.Network;
+import org.matthiaszimmermann.crypto.core.Protocol;
+import org.matthiaszimmermann.crypto.core.ProtocolFactory;
+import org.matthiaszimmermann.crypto.core.Technology;
+import org.matthiaszimmermann.crypto.core.Wallet;
+import org.matthiaszimmermann.crypto.core.WalletFactory;
+import org.matthiaszimmermann.crypto.utility.FileUtility;
 import org.matthiaszimmermann.crypto.utility.QrCodeUtility;
 import org.matthiaszimmermann.crypto.utility.WalletPageUtility;
 
@@ -116,12 +116,9 @@ public class Application {
 	public String verifyWalletFile() {
 		log("verifying wallet file ...");
 
-		Protocol protocol = ProtocolFactory.getInstance(Technology.Iota, Network.Production);
-		File file = new File(walletFile);
-
 		try {
-			List<String> mnemonicWords = mnemonic == null ? null : Mnemonic.convert(mnemonic);
-			Wallet wallet = WalletFactory.getInstance(file, mnemonicWords, passPhrase, protocol);
+			File file = new File(walletFile);
+			Wallet wallet = WalletFactory.getInstance(file, passPhrase);
 			log("wallet verification successful");
 			logWalletInfo(wallet);
 			return VERIFY_OK;

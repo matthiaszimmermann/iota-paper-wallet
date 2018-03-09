@@ -21,7 +21,7 @@
  * 
  */
 
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.core;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;

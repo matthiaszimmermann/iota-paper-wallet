@@ -15,6 +15,7 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<bitcoin.lib.version>0.14.4</bitcoin.lib.version>
+		<ethereum.lib.version>3.3.1</ethereum.lib.version>
 		<iota.lib.version>0.9.11-SNAPSHOT</iota.lib.version>
 	</properties>
 
@@ -25,6 +26,11 @@
 			<version>${bitcoin.lib.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.web3j</groupId>
+			<artifactId>core</artifactId>
+			<version>${ethereum.lib.version}</version>
+		</dependency>		
+		<dependency>
 			<groupId>org.iota</groupId>
 			<artifactId>jota</artifactId>
 			<version>${iota.lib.version}</version>
@@ -33,11 +39,6 @@
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20131018</version>
-		</dependency>
-		<dependency>
-			<groupId>org.web3j</groupId>
-			<artifactId>core</artifactId>
-			<version>1.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.zxing</groupId>

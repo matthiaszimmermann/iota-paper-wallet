@@ -1,7 +1,7 @@
 package org.matthiaszimmermann.crypto.iota;
 
-import org.matthiaszimmermann.crypto.common.Account;
-import org.matthiaszimmermann.crypto.common.Network; 
+import org.matthiaszimmermann.crypto.core.Account;
+import org.matthiaszimmermann.crypto.core.Network; 
 
 public class IotaAccount extends Account {
 	

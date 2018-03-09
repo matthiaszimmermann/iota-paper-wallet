@@ -11,9 +11,8 @@ import org.bitcoinj.crypto.MnemonicCode;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import org.matthiaszimmermann.crypto.common.Account;
-import org.matthiaszimmermann.crypto.common.Network;
+import org.matthiaszimmermann.crypto.core.Account;
+import org.matthiaszimmermann.crypto.core.Network;
 
 /**
  *

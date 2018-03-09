@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.core;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;

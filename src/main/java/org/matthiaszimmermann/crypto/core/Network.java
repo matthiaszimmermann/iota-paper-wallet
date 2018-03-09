@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.core;
 
 public enum Network {
 	Production,

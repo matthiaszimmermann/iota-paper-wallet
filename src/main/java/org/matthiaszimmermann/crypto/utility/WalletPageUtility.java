@@ -1,9 +1,8 @@
 package org.matthiaszimmermann.crypto.utility;
 
-import org.matthiaszimmermann.crypto.common.FileUtility;
-import org.matthiaszimmermann.crypto.common.Mnemonic;
-import org.matthiaszimmermann.crypto.common.Technology;
-import org.matthiaszimmermann.crypto.common.Wallet;
+import org.matthiaszimmermann.crypto.core.Mnemonic;
+import org.matthiaszimmermann.crypto.core.Technology;
+import org.matthiaszimmermann.crypto.core.Wallet;
 
 public class WalletPageUtility extends HtmlUtility {
 

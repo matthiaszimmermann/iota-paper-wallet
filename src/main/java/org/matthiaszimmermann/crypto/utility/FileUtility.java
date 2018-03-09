@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.utility;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;

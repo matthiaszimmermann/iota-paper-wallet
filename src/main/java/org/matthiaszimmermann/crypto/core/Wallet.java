@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.core;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +12,9 @@ public abstract class Wallet {
 	public static final String JSON_VERSION = "version";
 	public static final String JSON_VERSION_VALUE = "1.0";
 	public static final String JSON_ACCOUNT = "account";
+
+	public static final String JSON_TECHNOLOGY = "technology";
+	public static final String JSON_NETWORK = "network";
 
 	public static final String DEFAULT_PATH_TO_DIRECTORY = System.getProperty("user.home");
 	public static final String DEFAULT_FILE_EXTENSION = "json";
@@ -28,7 +31,8 @@ public abstract class Wallet {
 		restoreAccount(protocol);
 	}
 	
-	public Wallet(File file, List<String> mnemonicWords, String passPhrase) throws Exception {
+	// TODO remove parameter mnemonic words 
+	public Wallet(File file, String passPhrase) throws Exception {
 		processPassPhrase(passPhrase);
 		restore(file);
 	}
@@ -37,7 +41,7 @@ public abstract class Wallet {
 	 * Restores the wallet from the provided wallet file content and pass phrase
 	 * @return 
 	 */
-	protected abstract Account restore(File file, List<String> mnemonicWords, String passPhrase) throws Exception;
+	protected abstract Account restore(File file, String passPhrase) throws Exception;
 
 	protected void processProtocol(Protocol p) {
 		if(p == null) {
@@ -75,7 +79,7 @@ public abstract class Wallet {
 			throw new IOException(String.format("File '%s' does not exist (or path is a directory)", file.getAbsolutePath()));
 		}
 		
-		account = restore(file, mnemonicWords, passPhrase);
+		account = restore(file, passPhrase);
 	}
 
 	public List<String> getMnemonicWords() {

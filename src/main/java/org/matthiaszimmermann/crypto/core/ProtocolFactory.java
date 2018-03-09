@@ -1,6 +1,7 @@
-package org.matthiaszimmermann.crypto.common;
+package org.matthiaszimmermann.crypto.core;
 
 import org.matthiaszimmermann.crypto.bitcoin.Bitcoin;
+import org.matthiaszimmermann.crypto.ethereum.Ethereum;
 import org.matthiaszimmermann.crypto.iota.Iota;
 
 public class ProtocolFactory {
@@ -9,6 +10,8 @@ public class ProtocolFactory {
 		switch(technology) {
 		case Bitcoin: 
 			return new Bitcoin(network);
+		case Ethereum: 
+			return new Ethereum(network);
 		case Iota: 
 			return new Iota(network);
 		default:

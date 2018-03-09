@@ -5,30 +5,25 @@ import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.matthiaszimmermann.crypto.common.Account;
-import org.matthiaszimmermann.crypto.common.FileUtility;
-import org.matthiaszimmermann.crypto.common.Network;
-import org.matthiaszimmermann.crypto.common.Protocol;
-import org.matthiaszimmermann.crypto.common.ProtocolFactory;
-import org.matthiaszimmermann.crypto.common.Technology;
-import org.matthiaszimmermann.crypto.common.Wallet;
+import org.matthiaszimmermann.crypto.core.Account;
+import org.matthiaszimmermann.crypto.core.Network;
+import org.matthiaszimmermann.crypto.core.Protocol;
+import org.matthiaszimmermann.crypto.core.ProtocolFactory;
+import org.matthiaszimmermann.crypto.core.Technology;
+import org.matthiaszimmermann.crypto.core.Wallet;
 import org.matthiaszimmermann.crypto.utility.AesUtility;
+import org.matthiaszimmermann.crypto.utility.FileUtility;
 
 public class IotaWallet extends Wallet {
 
-	public static final String JSON_VERSION = "version";
-	public static final String JSON_VERSION_VALUE = "1.0";
-
-	public static final String JSON_TECHNOLOGY = "technology";
-	public static final String JSON_NETWORK = "network";
-
+	// TODO cleanup constants
 	public static final String JSON_SEED = "seed";
 	public static final String JSON_IV = "iv";
 	public static final String JSON_ENCRYPTED = "encrypted";
 	public static final String JSON_ADDRESS = "address";
 
-	public IotaWallet(File file, List<String> mnemonicWords, String passPhrase) throws Exception {
-		super(file, mnemonicWords, passPhrase);
+	public IotaWallet(File file, String passPhrase) throws Exception {
+		super(file, passPhrase);
 	}
 
 	public IotaWallet(List<String> mnemonicWords, String passPhrase, Network network) {
@@ -45,7 +40,7 @@ public class IotaWallet extends Wallet {
 	}
 
 	@Override
-	protected Account restore(File file, List<String> mnemonicWords, String passPhrase) throws Exception {
+	protected Account restore(File file, String passPhrase) throws Exception {
 		String jsonString = FileUtility.readTextFile(file);
 		
 		if(jsonString.isEmpty()) {
