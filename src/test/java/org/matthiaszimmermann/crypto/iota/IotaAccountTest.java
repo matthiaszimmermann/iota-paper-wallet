@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 import java.util.List;
 
+import org.json.JSONException;
 import org.junit.Test;
 import org.matthiaszimmermann.crypto.common.BaseTest;
 import org.matthiaszimmermann.crypto.core.Account;
@@ -19,7 +20,8 @@ public class IotaAccountTest extends BaseTest {
 		
 		Protocol protocol = new Iota(Network.Production);
 		List<String> mnemonicWords = protocol.generateMnemonicWords();
-		Account account = ((Iota)protocol).restoreAccount(mnemonicWords, null);
+		String passPhrase = "test pass phrase";
+		Account account = new IotaAccount(mnemonicWords, passPhrase, protocol.getNetwork());
 		
 		log("mnemonic words: '%s'", String.join(" ", mnemonicWords));
 		log("seed: '%s'", account.getSecret());
@@ -27,10 +29,17 @@ public class IotaAccountTest extends BaseTest {
 		assertNotNull(account);
 		
 		log("account address: %s", account.getAddress());
-		log("account json:"); 
-		log(account.toJson().toString());
-		log("account json pretty:");
-		log(account.toJson("test pass phrase").toString(2));
+		
+		try {
+			log("account json:"); 
+			log(account.toJson().toString());
+			
+			log("account json pretty:");
+			log(account.toJson(passPhrase, true).toString(2));
+		} 
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
 
 		log("--- end testCreateAccount() ---");
 	}

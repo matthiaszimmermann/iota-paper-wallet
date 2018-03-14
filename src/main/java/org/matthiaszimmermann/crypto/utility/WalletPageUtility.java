@@ -1,16 +1,24 @@
 package org.matthiaszimmermann.crypto.utility;
 
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
 import org.matthiaszimmermann.crypto.core.Mnemonic;
+import org.matthiaszimmermann.crypto.core.Network;
+import org.matthiaszimmermann.crypto.core.Protocol;
 import org.matthiaszimmermann.crypto.core.Technology;
 import org.matthiaszimmermann.crypto.core.Wallet;
 
 public class WalletPageUtility extends HtmlUtility {
 
+	public static final String UTC_DATE_TIME_PATTERN = "'UTC 'yyyy-MM-dd' 'HH:mm:ss.nVV";
+	
 	// TODO verify version with the one in the pom.xml
 	public static final String VERSION = "0.1.0-SNAPSHOT";
 	public static final String REPOSITORY = "https://github.com/matthiaszimmermann/TODO";
 
-	public static final String TITLE = "%s Paper Wallet";
+	public static final String TITLE = "%s Paper Wallet (%s)";
 	public static final String LOGO = "/%s_logo.png"; 
 
 	public static final String CSS_CLEARFIX = "clearfix";
@@ -54,7 +62,8 @@ public class WalletPageUtility extends HtmlUtility {
 	};
 
 	public static String createHtml(Wallet wallet) {
-		Technology technology = wallet.getProtocol().getTechnology();
+		Protocol protocol = wallet.getProtocol();
+		Technology technology = protocol.getTechnology();
 		String address = wallet.getAccount().getAddress();
 		String seed = wallet.getSeed();
 		String mnemonic = Mnemonic.convert(wallet.getMnemonicWords());
@@ -69,13 +78,13 @@ public class WalletPageUtility extends HtmlUtility {
 
 		// header
 		HtmlUtility.addOpenElements(html, HtmlUtility.HTML, HtmlUtility.HEAD);
-		HtmlUtility.addTitle(html, getTitle(technology));
+		HtmlUtility.addTitle(html, getTitle(protocol));
 		HtmlUtility.addStyles(html, CSS_STYLES);
 		HtmlUtility.addCloseElements(html, HtmlUtility.HEAD);
 
 		// body
 		HtmlUtility.addOpenElements(html, HtmlUtility.BODY);
-		HtmlUtility.addHeader2(html, getTitle(technology));
+		HtmlUtility.addHeader2(html, getTitle(protocol));
 
 		// add 1st row
 		HtmlUtility.addOpenDiv(html, CSS_CLEARFIX, CSS_ADDRESS_ROW);
@@ -116,17 +125,17 @@ public class WalletPageUtility extends HtmlUtility {
 		HtmlUtility.addContent(html, address);
 		HtmlUtility.addCloseDiv(html);
 
-		HtmlUtility.addParagraph(html, "Seed", CSS_CAPTION);
-		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
-		HtmlUtility.addContent(html, seed);
-		HtmlUtility.addCloseDiv(html);
-
 		if(!seed.equals(mnemonic)) {
-			HtmlUtility.addParagraph(html, "Mnemonic", CSS_CAPTION);
+			HtmlUtility.addParagraph(html, "Seed", CSS_CAPTION);
 			HtmlUtility.addOpenDiv(html, CSS_CONTENT);
-			HtmlUtility.addContent(html, mnemonic);
+			HtmlUtility.addContent(html, seed);
 			HtmlUtility.addCloseDiv(html);
 		}
+
+		HtmlUtility.addParagraph(html, "Mnemonic", CSS_CAPTION);
+		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
+		HtmlUtility.addContent(html, mnemonic);
+		HtmlUtility.addCloseDiv(html);
 
 		HtmlUtility.addCloseDiv(html);
 		HtmlUtility.addCloseDiv(html);
@@ -158,6 +167,11 @@ public class WalletPageUtility extends HtmlUtility {
 		HtmlUtility.addContent(html, wallet.getFileName());
 		HtmlUtility.addCloseDiv(html);
 
+		HtmlUtility.addParagraph(html, "Creation Date", CSS_CAPTION);
+		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
+		HtmlUtility.addContent(html, getCurrentDateTimeUTC());
+		HtmlUtility.addCloseDiv(html);
+
 		HtmlUtility.addCloseDiv(html);		
 		HtmlUtility.addCloseDiv(html);		
 
@@ -172,11 +186,20 @@ public class WalletPageUtility extends HtmlUtility {
 		return html.toString();
 	}
 
+	private static String getCurrentDateTimeUTC() {
+		DateTimeFormatter format = DateTimeFormatter.ofPattern(UTC_DATE_TIME_PATTERN);
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+
+        return now.format(format);
+	}
+
 	private static String getLogo(Technology technology) {
 		return String.format(LOGO, technology.name().toLowerCase());
 	}
 
-	private static String getTitle(Technology technology) {
-		return String.format(TITLE, technology.name());
+	private static String getTitle(Protocol protocol) {
+		Technology technology = protocol.getTechnology();
+		Network network = protocol.getNetwork();
+		return String.format(TITLE, technology, network);
 	}
 }

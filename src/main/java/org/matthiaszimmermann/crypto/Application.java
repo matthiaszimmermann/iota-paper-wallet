@@ -3,6 +3,7 @@ package org.matthiaszimmermann.crypto;
 import java.io.File;
 import java.util.List;
 
+import org.matthiaszimmermann.crypto.core.Account;
 import org.matthiaszimmermann.crypto.core.Mnemonic;
 import org.matthiaszimmermann.crypto.core.Network;
 import org.matthiaszimmermann.crypto.core.Protocol;
@@ -79,11 +80,11 @@ public class Application {
 	public String createWalletFile() {
 		log("creating wallet file ...");
 
+		// TODO add command line params to indicate network
 		Protocol protocol = ProtocolFactory.getInstance(Technology.get(technology), Network.Production);
 		List<String> mnemonicWords = mnemonic == null ? protocol.generateMnemonicWords() : Mnemonic.convert(mnemonic);
 		Wallet wallet = null;
 
-		// TODO add command line params to indicate network
 		try {
 			wallet = WalletFactory.getInstance(mnemonicWords, passPhrase, protocol);
 			wallet.setPathToDirectory(targetDirectory);
@@ -130,19 +131,21 @@ public class Application {
 	}
 
 	private void logWalletInfo(Wallet wallet) {
-		String seed = wallet.getAccount().getSecret();
-		String mnemonic = Mnemonic.convert(wallet.getMnemonicWords());
+		Account account = wallet.getAccount();
+		String seed = account.getSecret();
+		String address = wallet.getAccount().getAddress();
 		String passPhrase = wallet.getPassPhrase();
-		log("file: " + wallet.getAbsolutePath());
+		log("wallet file: " + wallet.getAbsolutePath());
+		log("protocol: " + wallet.getProtocol());
+		log("address: " + address);
 		log("encrypted: " + (passPhrase != null && passPhrase.length() > 0));
-		log("pass phrase: " + passPhrase);
+		log("pass phrase: " + passPhrase);		
+		log("seed: " + seed);
 		
+		String mnemonic = Mnemonic.convert(wallet.getMnemonicWords());
 		if(!mnemonic.equals(seed)) {
 			log("mnemonic: " + mnemonic);
 		}
-		
-		log("seed: " + seed);
-		log("address: " + wallet.getAccount().getAddress());
 	}
 
 	private void parseCommandLine(String [] args) {

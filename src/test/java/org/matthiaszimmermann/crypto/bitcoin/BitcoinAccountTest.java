@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 import java.util.List;
 
+import org.json.JSONException;
 import org.junit.Test;
 import org.matthiaszimmermann.crypto.common.BaseTest;
 import org.matthiaszimmermann.crypto.core.Account;
@@ -19,17 +20,25 @@ public class BitcoinAccountTest extends BaseTest {
 		
 		Protocol protocol = new Bitcoin(Network.Production);
 		List<String> mnemonicWords = protocol.generateMnemonicWords();
-		Account account = new BitcoinAccount(mnemonicWords, protocol.getNetwork());
+		String passPhrase = "pass phrase";
+		Account account = new BitcoinAccount(mnemonicWords, passPhrase, protocol.getNetwork());
 		
 		log("mnemonic words (bip39 seed): '%s'", String.join(" ", mnemonicWords));
 		
 		assertNotNull(account);
 		
 		log("account address: %s", account.getAddress());
-		log("account json:"); 
-		log(account.toJson().toString());
-		log("account json pretty:");
-		log(account.toJson("pass phrase").toString(2));
+		
+		try {
+			log("account json:"); 
+			log(account.toJson().toString());
+			
+			log("account json pretty:");
+			log(account.toJson(passPhrase, true).toString(2));
+		} 
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
 		
 		// assertTrue(string.length() > 0);
 		// assertEquals("dfgh", string);

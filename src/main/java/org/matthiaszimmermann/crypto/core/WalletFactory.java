@@ -13,18 +13,18 @@ import org.matthiaszimmermann.crypto.utility.FileUtility;
 public class WalletFactory {
 
 	public static Wallet getInstance(List<String> mnemonicWords, String passPhase, Protocol protocol) {
-		
+
 		if(protocol == null) {
 			throw new IllegalArgumentException("Protocol must not be null");
 		}
-		
+
 		if(mnemonicWords == null) {
 			throw new IllegalArgumentException("Mnemonic words must not be null");
 		}
-		
+
 		Technology technology = protocol.getTechnology();
 		Network network = protocol.getNetwork();
-		
+
 		switch(technology) {
 		case Bitcoin: 
 			return new BitcoinWallet(mnemonicWords, passPhase, network);
@@ -36,14 +36,14 @@ public class WalletFactory {
 			throw new IllegalArgumentException(String.format("Technology %s is currently not supported", technology));
 		}
 	}
-	
+
 	public static Wallet getInstance(File file, String passPhrase) throws Exception {
 		if(passPhrase == null) {
 			throw new IllegalArgumentException("Pass phrase needs to be specified");
 		}
-		
+
 		Technology technology = getTechnology(file);
-		
+
 		switch(technology) {
 		case Bitcoin:
 			return new BitcoinWallet(file, passPhrase);
@@ -58,22 +58,28 @@ public class WalletFactory {
 
 	private static Technology getTechnology(File file) {
 		JSONObject node = readJsonFile(file);
-		
-		// TODO find better solution for ethereum wallet
-		if(!node.has(Wallet.JSON_TECHNOLOGY)) {
-			return Technology.Ethereum;
+
+		try {
+			return Technology.get(node.getString(Wallet.JSON_TECHNOLOGY));
 		}
-		
-		return Technology.get(node.getString(Wallet.JSON_TECHNOLOGY));
+		catch(JSONException e) {
+			throw new RuntimeException("Failed to access technology value", e);
+		}
+
 	}
 
 	private static JSONObject readJsonFile(File file) {
 		String jsonString = FileUtility.readTextFile(file);
-		
+
 		if(jsonString.isEmpty()) {
-			throw new JSONException("Empty wallet file");
+			throw new RuntimeException("Empty wallet file");
 		}
 
-		return new JSONObject(jsonString);
+		try {
+			return new JSONObject(jsonString);
+		}
+		catch (JSONException e) {
+			throw new RuntimeException("Failed to convert wallet file to json object", e);
+		}
 	}
 }

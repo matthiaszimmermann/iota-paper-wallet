@@ -2,6 +2,8 @@ package org.matthiaszimmermann.crypto.core;
 
 import java.util.List;
 
+import org.json.JSONObject;
+
 public abstract class Protocol {
 	
 	private Technology technology;
@@ -36,11 +38,17 @@ public abstract class Protocol {
 		return network;
 	}
 	
-	abstract public Account restoreAccount(List<String> mnemonicWords, String passPhrase);
+	abstract public Account createAccount(List<String> mnemonicWords, String passPhrase);
+	abstract public Account restoreAccount(JSONObject accountJson, String passPhrase);
 
 	abstract public List<String> generateMnemonicWords();
 
 	abstract public void validateMnemonicWords(List<String> mnemonicWords);
+	
+	@Override
+	public String toString() {
+		return String.format("%s (%s)", getTechnology(), getNetwork());
+	}
 	
 	@Override
 	public boolean equals(Object obj) {

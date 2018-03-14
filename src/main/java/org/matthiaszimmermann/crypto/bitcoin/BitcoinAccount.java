@@ -1,13 +1,13 @@
 package org.matthiaszimmermann.crypto.bitcoin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.HDKeyDerivation;
 import org.bitcoinj.crypto.MnemonicCode;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,15 +21,11 @@ import org.matthiaszimmermann.crypto.core.Network;
  */
 public class BitcoinAccount extends Account {
 
-	private List<String> bip39seed;
-	private DeterministicKey dk;
-	
 	private List<Chain> chains = null;
-	
+
 	public BitcoinAccount(String secret, String address, Network network) {
 		super(secret, address, new Bitcoin(network));
 	}
-
 
 	/**
 	 * Constructor for account.
@@ -37,22 +33,43 @@ public class BitcoinAccount extends Account {
 	 * @param List<String> mnemonicWords the BIP39 seed word list for this HD account
 	 * @param NetworkParameters params
 	 */
-	public BitcoinAccount(List<String> mnemonicWords, Network network) {
+	public BitcoinAccount(List<String> mnemonicWords, String passPhrase, Network network) {
 		super(new Bitcoin(network));
+
+		getProtocol().validateMnemonicWords(mnemonicWords);
+		DeterministicKey dk = getDeterministicKey(mnemonicWords, passPhrase);
 		
-		bip39seed = mnemonicWords;
+		secret = String.join(" ", mnemonicWords);
+		chains = getChains(dk, network);
+	}
+
+	private List<Chain> getChains(DeterministicKey dk, Network network) {
+		List<Chain> chains = new ArrayList<>();
+		chains.add(new Chain(dk, true, network));
+		chains.add(new Chain(dk, false, network));
 		
-		byte [] seed = MnemonicCode.toSeed(bip39seed, "");		
+		return chains;
+	}
+
+	private DeterministicKey getDeterministicKey(List<String> mnemonicWords, String passPhrase) {
+		byte [] seed = MnemonicCode.toSeed(mnemonicWords, passPhrase);
+		
 		DeterministicKey rootKey = ((Bitcoin)getProtocol()).seedToRootKey(seed);
 		int child = rootKey.getChildNumber().num();
 		int childnum = child | ChildNumber.HARDENED_BIT;
-        dk = HDKeyDerivation.deriveChildKey(rootKey, childnum);
-        
-        chains = new ArrayList<>();
-        chains.add(new Chain(dk, true, network));
-        chains.add(new Chain(dk, false, network));
+		
+		return HDKeyDerivation.deriveChildKey(rootKey, childnum);
 	}
-	
+
+	public BitcoinAccount(JSONObject accountJson, String passPhrase, Network network) throws JSONException {
+		super(accountJson, passPhrase, new Bitcoin(network));
+		
+		List<String> mnemonicWords = new ArrayList<String>(Arrays.asList(secret.split(" ")));
+		DeterministicKey dk = getDeterministicKey(mnemonicWords, passPhrase);
+		
+		chains = getChains(dk, network);		
+	}
+
 	@Override
 	public String getAddress() {
 		Chain chain = getReceive();
@@ -61,54 +78,31 @@ public class BitcoinAccount extends Account {
 	}
 
 	/**
-	 * Return private key for this address (compressed WIF format).
+	 * Return receive chain this account.
 	 *
-	 * @return String
-	 *
-	 */
-	@Override
-	public String getSecret() {
-		return String.join(" ", bip39seed);
-	}
-	
-	
-    /**
-     * Return receive chain this account.
-     *
-     * @return HD_Chain
-     *
-     */
-    private Chain getReceive() {
-        return chains.get(0);
-    }
-
-	/**
-	 * Return BIP44 path for this address (m / purpose' / coin_type' / account' / chain / address_index).
-	 *
-	 * @return String
+	 * @return HD_Chain
 	 *
 	 */
-    // TODO decide if method should be removed (what's the value of having access to path info?)
-	protected String getPath() {
-		return dk == null ? null : dk.getPathAsString();
+	protected Chain getReceive() {
+		return chains.get(0);
 	}
 
 	@Override
-	public JSONObject toJson(String passPhrase) {
-        try {
-            JSONObject obj = super.toJson(passPhrase);
-            obj.put("chains", chainsToJson());
-            return obj;
-        }
-        catch(JSONException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
+	public JSONObject toJson(String passPhrase, boolean includePrototolInfo) {
+		try {
+			JSONObject obj = super.toJson(passPhrase, includePrototolInfo);
+			obj.put("chains", chainsToJson());
+			return obj;
+		}
+		catch(JSONException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
 
 	private JSONArray chainsToJson() {
 		JSONArray chainsArray = new JSONArray();
 		for(Chain chain : chains)   {
-		    chainsArray.put(chain.toJSON());
+			chainsArray.put(chain.toJSON());
 		}
 		return chainsArray;
 	}
