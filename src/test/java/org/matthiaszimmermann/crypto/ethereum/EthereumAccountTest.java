@@ -22,7 +22,7 @@ public class EthereumAccountTest extends BaseTest {
 
 	@Test
 	public void testCreateAndRestore() throws IOException, JSONException {
-		log("--- start testCreateFromProtocol() ---");
+		log("--- start testCreateAndRestore() ---");
 		
 		Protocol protocol = ProtocolFactory.getInstance(Technology.Ethereum, Network.Production);
 		List<String> mnemonicWords = protocol.generateMnemonicWords();
@@ -30,12 +30,12 @@ public class EthereumAccountTest extends BaseTest {
 
 		assertNotNull(accountNew);
 		
-		JSONObject json = accountNew.toJson(PASS_PHRASE, false);
+		JSONObject json = accountNew.toJson(false);
 		Account accountRestored = protocol.restoreAccount(json, PASS_PHRASE);
 		
 		assertEquals(accountNew, accountRestored);
 		
-		log("--- end testCreateFromProtocol() ---");
+		log("--- end testCreateAndRestore() ---");
 	}
 
 	@Test
@@ -44,7 +44,6 @@ public class EthereumAccountTest extends BaseTest {
 
 		Protocol protocol = new Ethereum(Network.Production);
 		List<String> mnemonicWords = protocol.generateMnemonicWords();
-		String passPhrase = "test pass phrase";
 		Account account = new EthereumAccount(mnemonicWords, PASS_PHRASE, protocol.getNetwork());
 
 		log("mnemonic words: '%s'", String.join(" ", mnemonicWords));
@@ -58,7 +57,7 @@ public class EthereumAccountTest extends BaseTest {
 			log(account.toJson().toString());
 
 			log("account json pretty:");
-			log(account.toJson(passPhrase, true).toString(2));
+			log(account.toJson(true).toString(2));
 		} 
 		catch (JSONException e) {
 			e.printStackTrace();

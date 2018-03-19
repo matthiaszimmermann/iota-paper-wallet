@@ -1,5 +1,6 @@
 package org.matthiaszimmermann.crypto.bitcoin;
 
+import java.io.File;
 import java.util.List;
 
 import org.bitcoinj.core.NetworkParameters;
@@ -13,10 +14,10 @@ import org.bitcoinj.params.UnitTestParams;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.matthiaszimmermann.crypto.core.Account;
-import org.matthiaszimmermann.crypto.core.Entropy;
 import org.matthiaszimmermann.crypto.core.Network;
 import org.matthiaszimmermann.crypto.core.Protocol;
 import org.matthiaszimmermann.crypto.core.Technology;
+import org.matthiaszimmermann.crypto.core.Wallet;
 
 public class Bitcoin extends Protocol {
 
@@ -25,34 +26,6 @@ public class Bitcoin extends Protocol {
 
 	public Bitcoin(Network network) {
 		super(Technology.Bitcoin, network);
-	}
-
-	@Override
-	public BitcoinAccount createAccount(List<String> mnemonic, String passPhrase) {		
-		return new BitcoinAccount(mnemonic, passPhrase, getNetwork());
-	}
-
-	@Override
-	public Account restoreAccount(JSONObject accountJson, String passPhrase) {
-		try {
-			return new BitcoinAccount(accountJson, passPhrase, getNetwork());
-		} 
-		catch (JSONException e) {
-			throw new RuntimeException("Failed to create Bitcoin account from json object", e);
-		}
-	}
-
-	@Override
-	public List<String> generateMnemonicWords() {
-		byte [] entropy = Entropy.generateEntropy();
-
-		try {
-			MnemonicCode mc = new MnemonicCode();
-			return mc.toMnemonic(entropy);
-		} 
-		catch (Exception e) {
-			throw new RuntimeException("Failed to create mnemonic code", e);
-		}
 	}
 
 	@Override
@@ -80,6 +53,38 @@ public class Bitcoin extends Protocol {
 		}
 		catch (Exception e) {
 			throw new IllegalArgumentException("Provided mnemonic word list fails to verify: ", e);
+		}
+	}
+	
+	@Override
+	public Wallet createWallet(List<String> mnemonicWords, String passPhase) {
+		validateMnemonicWords(mnemonicWords);
+		return new BitcoinWallet(mnemonicWords, passPhase, getNetwork());
+	}
+	
+	@Override
+	public Wallet restoreWallet(File file, String passPhrase) {
+		try {
+			return new BitcoinWallet(file, passPhrase);
+		} 
+		catch (Exception e) {
+			throw new RuntimeException("Failed to restore Bitcoin wallet", e);
+		} 	
+	}
+
+	@Override
+	public BitcoinAccount createAccount(List<String> mnemonicWords, String passPhrase) {		
+		validateMnemonicWords(mnemonicWords);
+		return new BitcoinAccount(mnemonicWords, passPhrase, getNetwork());
+	}
+
+	@Override
+	public Account restoreAccount(JSONObject accountJson, String passPhrase) {
+		try {
+			return new BitcoinAccount(accountJson, passPhrase, getNetwork());
+		} 
+		catch (JSONException e) {
+			throw new RuntimeException("Failed to create Bitcoin account from json object", e);
 		}
 	}
 

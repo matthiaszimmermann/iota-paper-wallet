@@ -23,10 +23,6 @@ public class BitcoinAccount extends Account {
 
 	private List<Chain> chains = null;
 
-	public BitcoinAccount(String secret, String address, Network network) {
-		super(secret, address, new Bitcoin(network));
-	}
-
 	/**
 	 * Constructor for account.
 	 *
@@ -34,24 +30,25 @@ public class BitcoinAccount extends Account {
 	 * @param NetworkParameters params
 	 */
 	public BitcoinAccount(List<String> mnemonicWords, String passPhrase, Network network) {
-		super(new Bitcoin(network));
+		super(passPhrase, new Bitcoin(network));
 
 		getProtocol().validateMnemonicWords(mnemonicWords);
-		DeterministicKey dk = getDeterministicKey(mnemonicWords, passPhrase);
+		DeterministicKey dk = getDeterministicKey(mnemonicWords);
 		
 		secret = String.join(" ", mnemonicWords);
 		chains = getChains(dk, network);
 	}
 
-	private List<Chain> getChains(DeterministicKey dk, Network network) {
-		List<Chain> chains = new ArrayList<>();
-		chains.add(new Chain(dk, true, network));
-		chains.add(new Chain(dk, false, network));
+	public BitcoinAccount(JSONObject accountJson, String passPhrase, Network network) throws JSONException {
+		super(accountJson, passPhrase, new Bitcoin(network));
 		
-		return chains;
+		List<String> mnemonicWords = new ArrayList<String>(Arrays.asList(secret.split(" ")));
+		DeterministicKey dk = getDeterministicKey(mnemonicWords);
+		
+		chains = getChains(dk, network);		
 	}
 
-	private DeterministicKey getDeterministicKey(List<String> mnemonicWords, String passPhrase) {
+	private DeterministicKey getDeterministicKey(List<String> mnemonicWords) {
 		byte [] seed = MnemonicCode.toSeed(mnemonicWords, passPhrase);
 		
 		DeterministicKey rootKey = ((Bitcoin)getProtocol()).seedToRootKey(seed);
@@ -61,13 +58,12 @@ public class BitcoinAccount extends Account {
 		return HDKeyDerivation.deriveChildKey(rootKey, childnum);
 	}
 
-	public BitcoinAccount(JSONObject accountJson, String passPhrase, Network network) throws JSONException {
-		super(accountJson, passPhrase, new Bitcoin(network));
+	private List<Chain> getChains(DeterministicKey dk, Network network) {
+		List<Chain> chains = new ArrayList<>();
+		chains.add(new Chain(dk, true, network));
+		chains.add(new Chain(dk, false, network));
 		
-		List<String> mnemonicWords = new ArrayList<String>(Arrays.asList(secret.split(" ")));
-		DeterministicKey dk = getDeterministicKey(mnemonicWords, passPhrase);
-		
-		chains = getChains(dk, network);		
+		return chains;
 	}
 
 	@Override
@@ -88,9 +84,9 @@ public class BitcoinAccount extends Account {
 	}
 
 	@Override
-	public JSONObject toJson(String passPhrase, boolean includePrototolInfo) {
+	public JSONObject toJson(boolean includePrototolInfo) {
 		try {
-			JSONObject obj = super.toJson(passPhrase, includePrototolInfo);
+			JSONObject obj = super.toJson(includePrototolInfo);
 			obj.put("chains", chainsToJson());
 			return obj;
 		}

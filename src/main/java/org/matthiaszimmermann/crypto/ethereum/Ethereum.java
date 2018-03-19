@@ -1,14 +1,14 @@
 package org.matthiaszimmermann.crypto.ethereum;
 
+import java.io.File;
 import java.util.List;
 
-import org.bitcoinj.crypto.MnemonicCode;
 import org.json.JSONObject;
 import org.matthiaszimmermann.crypto.core.Account;
-import org.matthiaszimmermann.crypto.core.Entropy;
 import org.matthiaszimmermann.crypto.core.Network;
 import org.matthiaszimmermann.crypto.core.Protocol;
 import org.matthiaszimmermann.crypto.core.Technology;
+import org.matthiaszimmermann.crypto.core.Wallet;
 
 public class Ethereum extends Protocol {
 
@@ -19,34 +19,21 @@ public class Ethereum extends Protocol {
 		super(Technology.Ethereum, network);
 	}
 
-	@Override
-	public Account createAccount(List<String> mnemonicWords, String passPhrase) {
-		return new EthereumAccount(mnemonicWords, passPhrase, getNetwork());
-	}
-
-	@Override
-	public Account restoreAccount(JSONObject accountJson, String passPhrase) {
-		return new EthereumAccount(accountJson, passPhrase, getNetwork());
-	}
-
-	// TODO check if this fits ethereum (as the code below is copy paste from bitcoin)
+	
 	@Override
 	public List<String> generateMnemonicWords() {
-		byte [] entropy = Entropy.generateEntropy();
+		// TODO re-enable once web3j is working again ...
+//		byte [] entropy = Entropy.generateEntropy();
+//		String mnemonicString = MnemonicUtils.generateMnemonic(entropy); 
+//		return Arrays.asList(mnemonicString.split(" "));
 		
-		try {
-			MnemonicCode mc = new MnemonicCode();
-			return mc.toMnemonic(entropy);
-		} 
-		catch (Exception e) {
-			throw new RuntimeException("Failed to create mnemonic code", e);
-		}
+		return super.generateMnemonicWords();
 	}
 	
 	@Override
 	public void validateMnemonicWords(List<String> mnemonicWords) {
 		if(mnemonicWords == null) {
-			throw new IllegalArgumentException("Provided mnemonic word list is null");
+			throw new IllegalArgumentException("Mnemonic words must not be null");
 		} 
 
 		if(mnemonicWords.size() < MNEMONIC_LENGTH_MIN) {
@@ -62,5 +49,32 @@ public class Ethereum extends Protocol {
 		if(mnemonicWords.size() %3 != 0) {
 			throw new IllegalArgumentException("Provided the number of words for the mnemonic word list is not a multiple of 3");
 		}
+	}
+	
+	@Override
+	public Wallet createWallet(List<String> mnemonicWords, String passPhase) {
+		validateMnemonicWords(mnemonicWords);
+		return new EthereumWallet(mnemonicWords, passPhase, getNetwork());
+	}
+
+	@Override
+	public Wallet restoreWallet(File file, String passPhrase) {
+		try {
+			return new EthereumWallet(file, passPhrase);
+		} 
+		catch (Exception e) {
+			throw new RuntimeException("Failed to restore Ethereum wallet", e);
+		} 	
+	}
+
+	@Override
+	public Account createAccount(List<String> mnemonicWords, String passPhrase) {
+		validateMnemonicWords(mnemonicWords);
+		return new EthereumAccount(mnemonicWords, passPhrase, getNetwork());
+	}
+
+	@Override
+	public Account restoreAccount(JSONObject accountJson, String passPhrase) {
+		return new EthereumAccount(accountJson, passPhrase, getNetwork());
 	}
 }

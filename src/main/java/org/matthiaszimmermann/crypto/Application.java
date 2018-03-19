@@ -10,7 +10,6 @@ import org.matthiaszimmermann.crypto.core.Protocol;
 import org.matthiaszimmermann.crypto.core.ProtocolFactory;
 import org.matthiaszimmermann.crypto.core.Technology;
 import org.matthiaszimmermann.crypto.core.Wallet;
-import org.matthiaszimmermann.crypto.core.WalletFactory;
 import org.matthiaszimmermann.crypto.utility.FileUtility;
 import org.matthiaszimmermann.crypto.utility.QrCodeUtility;
 import org.matthiaszimmermann.crypto.utility.WalletPageUtility;
@@ -82,11 +81,11 @@ public class Application {
 
 		// TODO add command line params to indicate network
 		Protocol protocol = ProtocolFactory.getInstance(Technology.get(technology), Network.Production);
-		List<String> mnemonicWords = mnemonic == null ? protocol.generateMnemonicWords() : Mnemonic.convert(mnemonic);
+		List<String> mnemonicWords = mnemonic != null ? Mnemonic.convert(mnemonic) : protocol.generateMnemonicWords();
 		Wallet wallet = null;
 
 		try {
-			wallet = WalletFactory.getInstance(mnemonicWords, passPhrase, protocol);
+			wallet = protocol.createWallet(mnemonicWords, passPhrase);
 			wallet.setPathToDirectory(targetDirectory);
 		}
 		catch(Exception e) {
@@ -119,7 +118,8 @@ public class Application {
 
 		try {
 			File file = new File(walletFile);
-			Wallet wallet = WalletFactory.getInstance(file, passPhrase);
+			Protocol protocol = ProtocolFactory.getInstance(file);
+			Wallet wallet = protocol.restoreWallet(file, passPhrase);
 			log("wallet verification successful");
 			logWalletInfo(wallet);
 			return VERIFY_OK;

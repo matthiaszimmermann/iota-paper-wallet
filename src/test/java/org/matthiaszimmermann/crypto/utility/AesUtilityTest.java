@@ -52,7 +52,6 @@ public class AesUtilityTest extends BaseTest {
 		log("--- end testBase64encoding() ---");
 	}
 	
-	
 	@Test
 	public void testUtilityConstructor() throws Exception {
 		log("--- start testUtilityConstructor() ---");
@@ -107,6 +106,19 @@ public class AesUtilityTest extends BaseTest {
 		assertTrue(encodedDefault.length() > encoded4.length());
 
 		log("--- end testUtilityConstructor() ---");
+	}
+	
+	@Test
+	public void testSecretKeyGeneration() throws Exception {
+		AesUtility aes1 = new AesUtility(PASS_PHRASE, SALT, ITERATION_COUNT, 64);
+		AesUtility aes2 = new AesUtility(PASS_PHRASE, SALT, ITERATION_COUNT, 128);
+		AesUtility aes3 = new AesUtility(PASS_PHRASE, SALT, ITERATION_COUNT, 256);
+		AesUtility aes4 = new AesUtility(PASS_PHRASE, SALT, ITERATION_COUNT, 512);
+		
+		assertEquals(64/8, aes1.getSecretKey().getEncoded().length);
+		assertEquals(128/8, aes2.getSecretKey().getEncoded().length);
+		assertEquals(256/8, aes3.getSecretKey().getEncoded().length);
+		assertEquals(512/8, aes4.getSecretKey().getEncoded().length);
 	}
 	
 	private String getEncodedKey(AesUtility utility) {

@@ -5,7 +5,6 @@ import java.util.Random;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.matthiaszimmermann.crypto.bitcoin.Bitcoin;
 import org.matthiaszimmermann.crypto.core.Account;
 import org.matthiaszimmermann.crypto.core.Network;
 import org.matthiaszimmermann.crypto.core.PBKDF2SHA512; 
@@ -20,14 +19,10 @@ public class IotaAccount extends Account {
 	public static final int SECURITY_LEVEL_DEFAULT = 2;
 	public static final boolean CHECKSUM_DEFAULT = true;
 
-	public IotaAccount(String secret, String address, Network network) {
-		super(secret, address, new Iota(network));
-	}
-	
-	public IotaAccount(List<String> mnemonic, String passphrase, Network network) {
-		super(new Iota(network));
+	public IotaAccount(List<String> mnemonic, String passPhrase, Network network) {
+		super(passPhrase, new Iota(network));
 		
-		secret = deriveSeedFromMnemonic(mnemonic, passphrase);
+		secret = deriveSeedFromMnemonic(mnemonic);
 		address = Iota.deriveAddressFromSeed(secret);
 	}
 	
@@ -36,12 +31,12 @@ public class IotaAccount extends Account {
 	}
 	
 	//  https://www.reddit.com/r/Iota/comments/70srbt/an_easy_way_to_generate_a_seed_with_java_on/
-	private String deriveSeedFromMnemonic(List<String> words, String passphrase) {
+	private String deriveSeedFromMnemonic(List<String> words) {
 		// 81 places 27 chars per place
 		// 8 bytes per long in java
 		// 
 		String pass = String.join(" ", words);
-		String salt = SALT_PREFIX + passphrase;
+		String salt = SALT_PREFIX + passPhrase;
 
 		byte[] byteSeed = PBKDF2SHA512.derive(pass, salt, PBKDF2_ROUNDS, SEED_LENGTH * 8);
 		StringBuffer seed = new StringBuffer();

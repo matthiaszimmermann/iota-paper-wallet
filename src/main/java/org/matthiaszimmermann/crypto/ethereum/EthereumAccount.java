@@ -32,20 +32,8 @@ public class EthereumAccount extends Account {
 
 	Credentials credentials = null;
 
-
-	public EthereumAccount(String secret, String address, Network network) {
-		super(secret, address, new Ethereum(network));
-
-		credentials = Credentials.create(secret);
-
-		// make sure secret and address fit together
-		if(!credentials.getAddress().equals(address)) {
-			throw new RuntimeException(String.format("Address mismatch: Expected %s, found %s", getAddress(), credentials.getAddress()));
-		}
-	}
-	
 	public EthereumAccount(List<String> mnemonicWords, String passPhrase, Network network) {
-		super(new Ethereum(network));
+		super(passPhrase, new Ethereum(network));
 		
 		secret = derivePrivateKeyFromMnemonics(mnemonicWords, passPhrase);
 		credentials = Credentials.create(secret);
@@ -53,7 +41,7 @@ public class EthereumAccount extends Account {
 	}
 	
 	public EthereumAccount(JSONObject accountJson, String passPhrase, Network network) {
-		super(new Ethereum(network));
+		super(passPhrase, new Ethereum(network));
 		
 		WalletFile walletFile = objectMapper.convertValue(accountJson, WalletFile.class);
 		
@@ -98,13 +86,7 @@ public class EthereumAccount extends Account {
 	}
 	
 	@Override
-	public JSONObject toJson(String passPhrase, boolean includeProtocolInfo) {
-
-		// web3j wallet class does not like null value for pass phrase
-		if(passPhrase == null) {
-			passPhrase = "";
-		}
-
+	public JSONObject toJson(boolean includeProtocolInfo) {
 		try {
 			ECKeyPair keyPair = credentials.getEcKeyPair();
 			WalletFile wallet = Wallet.createStandard(passPhrase, keyPair);

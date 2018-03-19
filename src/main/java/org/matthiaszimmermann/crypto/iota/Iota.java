@@ -1,16 +1,15 @@
 package org.matthiaszimmermann.crypto.iota;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.matthiaszimmermann.crypto.core.Account;
-import org.matthiaszimmermann.crypto.core.Entropy;
-import org.matthiaszimmermann.crypto.core.Mnemonic;
 import org.matthiaszimmermann.crypto.core.Network;
 import org.matthiaszimmermann.crypto.core.Protocol;
 import org.matthiaszimmermann.crypto.core.Technology;
+import org.matthiaszimmermann.crypto.core.Wallet;
 
 import jota.error.ArgumentException;
 import jota.pow.ICurl;
@@ -27,10 +26,51 @@ public class Iota extends Protocol {
 	public Iota(Network network) {
 		super(Technology.Iota, network);
 	}
+	
+//	TODO remove/cleanup
+//	@Override
+//	public List<String> generateMnemonicWords() {
+//		byte [] entropy = Entropy.generateEntropy();
+//		List<String> wordList = null;
+//
+//		try {
+//			wordList = Mnemonic.loadWordList();
+//		} catch (IOException e) {
+//			throw new RuntimeException("Failed to load mnemonic default word list");
+//		}
+//
+//		return Mnemonic.toWords(entropy, wordList);
+//	}
 
 	@Override
-	public Account createAccount(List<String> mnemonic, String passPhrase) {
-		return new IotaAccount(mnemonic, passPhrase, getNetwork());
+	public void validateMnemonicWords(List<String> mnemonicWords) {
+		if(mnemonicWords == null) {
+			throw new IllegalArgumentException("Mnemonic words must not be null");
+		}
+
+		// TODO add some more validation here. if something looks bad throw an illegal arg exception	
+	}
+	
+	@Override
+	public Wallet createWallet(List<String> mnemonicWords, String passPhase) {
+		validateMnemonicWords(mnemonicWords);
+		return new IotaWallet(mnemonicWords, passPhase, getNetwork());
+	}
+
+	@Override
+	public Wallet restoreWallet(File file, String passPhrase) {
+		try {
+			return new IotaWallet(file, passPhrase);
+		} 
+		catch (Exception e) {
+			throw new RuntimeException("Failed to restore Iota wallet", e);
+		} 	
+	}
+
+	@Override
+	public Account createAccount(List<String> mnemonicWords, String passPhrase) {
+		validateMnemonicWords(mnemonicWords);
+		return new IotaAccount(mnemonicWords, passPhrase, getNetwork());
 	}	
 
 	@Override
@@ -39,29 +79,11 @@ public class Iota extends Protocol {
 			return new IotaAccount(accountJson, passPhrase, getNetwork());
 		} 
 		catch (JSONException e) {
-			throw new RuntimeException("Failed to create Bitcoin account from json object", e);
+			throw new RuntimeException("Failed to create Iota account from json object", e);
 		}
 	}
 	
-	@Override
-	public List<String> generateMnemonicWords() {
-		byte [] entropy = Entropy.generateEntropy();
-		List<String> wordList = null;
-
-		try {
-			wordList = Mnemonic.loadWordList();
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to load mnemonic default word list");
-		}
-
-		return Mnemonic.toWords(entropy, wordList);
-	}
-
-	@Override
-	public void validateMnemonicWords(List<String> mnemonicWords) {
-		// TODO add some validation here. if something looks bad throw an illegal arg exception	
-	}
-	
+	// TODO move this to account. an account has to know how to derive the address from its secret
 	// https://github.com/modum-io/tokenapp-keys-iota/blob/master/src/main/java/io/modum/IotaAddressGenerator.java
 	public static String deriveAddressFromSeed(String seed) {
 		ICurl curl = new JCurl(SpongeFactory.Mode.CURLP81);

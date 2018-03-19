@@ -145,7 +145,7 @@ public abstract class Wallet {
 			}
 
 			boolean includeProtocolInfo = false;
-			obj.put(JSON_ACCOUNT, getAccount().toJson(getPassPhrase(), includeProtocolInfo));
+			obj.put(JSON_ACCOUNT, getAccount().toJson(includeProtocolInfo));
 
 			return obj;
 		}

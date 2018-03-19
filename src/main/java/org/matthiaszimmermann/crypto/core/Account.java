@@ -14,29 +14,45 @@ public abstract class Account {
 	public static final String JSON_ENCRYPTED = "encrypted";
 	public static final String JSON_IV = "iv";
 
-	// TODO add pass phrase member variable
 	protected String address;
 	protected String secret;
+	protected String passPhrase;
 	protected Protocol protocol;
 
-	public Account(Protocol protocol) { 
-		processProtocol(protocol);
-	}
-
-	// TODO get rid of this constructor
-	public Account(String secret, String address, Protocol protocol) {
-		processSecret(secret);		
-		processAddress(address);
+	public Account(String passPhrase, Protocol protocol) {
+		processPassPhrase(passPhrase);
 		processProtocol(protocol);
 	}
 
 	public Account(JSONObject node, String passPhrase, Protocol protocol) throws JSONException {
-		processSecret(node, passPhrase);
+		processPassPhrase(passPhrase);
 		processAddress(node);
+		processSecret(node);
 		processProtocol(protocol);
 	}
 
-	private void processSecret(JSONObject node, String passPhrase) throws JSONException {
+	/**
+	 * Sets pass phrase member variable and converts a null value into an empty string.
+	 */
+	private void processPassPhrase(String passPhrase) {
+		this.passPhrase = passPhrase == null ? "" : passPhrase;
+	}
+
+	/**
+	 * Extracts address member variable from provided node.
+	 */
+	private void processAddress(JSONObject node) throws JSONException {
+		if(!node.has(JSON_ADDRESS)) {
+			throw new JSONException("Account node has no address attribute");
+		}
+
+		address = node.getString(JSON_ADDRESS);
+	}
+
+	/**
+	 * Extracts address member variable from provided node.
+	 */
+	private void processSecret(JSONObject node) throws JSONException {
 		// check and extract seed
 		if(!node.has(JSON_SECRET)) {
 			throw new JSONException("Account node has no secret attribute");
@@ -48,6 +64,10 @@ public abstract class Account {
 
 		// get secret
 		if(node.getBoolean(JSON_ENCRYPTED)) {
+			if(passPhrase.length() == 0) {
+				throw new JSONException("No password provided for encrypted account json");
+			}
+			
 			if(!node.has(JSON_IV)) {
 				throw new JSONException("Wallet file has no IV attribute (required for encrypted seed)");
 			}
@@ -68,12 +88,12 @@ public abstract class Account {
 		}
 	}
 
-	private void processAddress(JSONObject node) throws JSONException {
-		if(!node.has(JSON_ADDRESS)) {
-			throw new JSONException("Account node has no address attribute");
+	private void processProtocol(Protocol protocol) {
+		if(protocol == null) {
+			throw new IllegalArgumentException("Protocol must not be null");
 		}
 
-		address = node.getString(JSON_ADDRESS);
+		this.protocol = protocol;
 	}
 
 	/**
@@ -93,7 +113,7 @@ public abstract class Account {
 	 */
 	public JSONObject toJson() {
 		try {
-			return toJson(null, true);
+			return toJson(true);
 		}
 		catch(JSONException ex) {
 			throw new RuntimeException(ex);
@@ -102,12 +122,11 @@ public abstract class Account {
 
 	/**
 	 * Convert account to JSONObject including private key/seed.
-	 * @param passPhrase if a non-empty password is provided the key/seed will be encrypted
 	 * @param includeProtocolInfo adds protocol attributes iff true
 	 * @return JSON representation of this account
 	 * @throws JSONException 
 	 */
-	public JSONObject toJson(String passPhrase, boolean includeProtocolInfo) throws JSONException {
+	public JSONObject toJson(boolean includeProtocolInfo) throws JSONException {
 		JSONObject obj = new JSONObject();
 		boolean encrypted = false;
 
@@ -137,30 +156,6 @@ public abstract class Account {
 		obj.put(JSON_ENCRYPTED, encrypted);
 
 		return obj;
-	}
-
-	private void processAddress(String address) {
-		if(address == null) {
-			throw new IllegalArgumentException("Address must not be null");
-		}
-
-		this.address = address;
-	}
-
-	private void processSecret(String secret) {
-		if(secret == null) {
-			throw new IllegalArgumentException("Secret must not be null");
-		}
-
-		this.secret = secret;
-	}
-
-	private void processProtocol(Protocol protocol) {
-		if(protocol == null) {
-			throw new IllegalArgumentException("Protocol must not be null");
-		}
-
-		this.protocol = protocol;
 	}
 
 	public String getAddress() {
@@ -195,13 +190,13 @@ public abstract class Account {
 
 		Account other = (Account)obj;
 
-		return secret.equals(other.secret) 
-				&& address.equals(other.address) 
-				&& protocol.equals(other.protocol);
+		return getSecret().equals(other.getSecret()) 
+				&& getAddress().equals(other.getAddress()) 
+				&& getProtocol().equals(other.getProtocol());
 	}
 
 	@Override
 	public int hashCode() {
-		return secret.hashCode() | address.hashCode() | protocol.hashCode();
+		return getSecret().hashCode() | getAddress().hashCode() | getProtocol().hashCode();
 	}
 }
