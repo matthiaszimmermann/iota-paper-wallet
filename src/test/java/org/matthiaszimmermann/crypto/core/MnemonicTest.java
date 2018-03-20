@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.junit.Test;
 import org.matthiaszimmermann.crypto.common.BaseTest;
+import org.matthiaszimmermann.crypto.utility.EntropyUtility;
 
 public class MnemonicTest extends BaseTest {
 	public static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
@@ -75,7 +76,7 @@ public class MnemonicTest extends BaseTest {
 	public void testMnemonicRandom() throws Exception {
 		log("--- start testMnemonicRandom() ---");
 
-		byte [] entropy = Entropy.generateEntropy();
+		byte [] entropy = EntropyUtility.generateEntropy();
 		List<String> words = Mnemonic.deriveWords(entropy);;
 
 		assertNotNull(words);

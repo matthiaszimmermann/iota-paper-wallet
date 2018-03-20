@@ -1,4 +1,4 @@
-package org.matthiaszimmermann.crypto.core;
+package org.matthiaszimmermann.crypto.utility;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -6,7 +6,7 @@ import java.security.SecureRandom;
 /**
  * @author mzi
  */
-public class Entropy {
+public class EntropyUtility {
 
 	public static final int ENTROPY_BITS_DEFAULT = 128;
 
@@ -26,8 +26,8 @@ public class Entropy {
 	 */
 	public static byte [] generateEntropy(int bits) {
         
-		if(bits < 0 || bits % 8 != 0) {
-			throw new RuntimeException("Random bits needs to be positive (and a multiple of 8 bits) but is " + bits);
+		if(bits <= 0 || bits % 8 != 0) {
+			throw new IllegalArgumentException("Random bits needs to be positive (and a multiple of 8 bits) but is " + bits);
 		}
 		
         try {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 
 import org.json.JSONObject;
+import org.matthiaszimmermann.crypto.utility.EntropyUtility;
 
 public abstract class Protocol {
 
@@ -24,7 +25,7 @@ public abstract class Protocol {
 	abstract public Account restoreAccount(JSONObject accountJson, String passPhrase);
 
 	public List<String> generateMnemonicWords() {
-		byte [] entropy = Entropy.generateEntropy();
+		byte [] entropy = EntropyUtility.generateEntropy();
 		return Mnemonic.deriveWords(entropy);
 	}
 
