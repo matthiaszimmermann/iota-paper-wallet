@@ -6,8 +6,7 @@ import java.util.Random;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.matthiaszimmermann.crypto.core.Account;
-import org.matthiaszimmermann.crypto.core.Network;
-import org.matthiaszimmermann.crypto.core.PBKDF2SHA512; 
+import org.matthiaszimmermann.crypto.core.Network; 
 
 public class IotaAccount extends Account {
 	
