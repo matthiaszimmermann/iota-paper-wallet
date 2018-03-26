@@ -11,12 +11,6 @@ import org.matthiaszimmermann.crypto.core.Protocol;
 import org.matthiaszimmermann.crypto.core.Technology;
 import org.matthiaszimmermann.crypto.core.Wallet;
 
-import jota.error.ArgumentException;
-import jota.pow.ICurl;
-import jota.pow.JCurl;
-import jota.pow.SpongeFactory;
-import jota.utils.IotaAPIUtils;
-
 // TODO transfer creation /w offline signing
 // http://ogrelab.ikratko.com/sending-new-transfer-to-iota-node-using-java-aka-sendtransfer/
 public class Iota extends Protocol {
@@ -26,21 +20,6 @@ public class Iota extends Protocol {
 	public Iota(Network network) {
 		super(Technology.Iota, network);
 	}
-	
-//	TODO remove/cleanup
-//	@Override
-//	public List<String> generateMnemonicWords() {
-//		byte [] entropy = Entropy.generateEntropy();
-//		List<String> wordList = null;
-//
-//		try {
-//			wordList = Mnemonic.loadWordList();
-//		} catch (IOException e) {
-//			throw new RuntimeException("Failed to load mnemonic default word list");
-//		}
-//
-//		return Mnemonic.toWords(entropy, wordList);
-//	}
 
 	@Override
 	public void validateMnemonicWords(List<String> mnemonicWords) {
@@ -68,9 +47,9 @@ public class Iota extends Protocol {
 	}
 
 	@Override
-	public Account createAccount(List<String> mnemonicWords, String passPhrase) {
+	public Account createAccount(List<String> mnemonicWords, String passPhrase, Network network) {
 		validateMnemonicWords(mnemonicWords);
-		return new IotaAccount(mnemonicWords, passPhrase, getNetwork());
+		return new IotaAccount(mnemonicWords, passPhrase, network);
 	}	
 
 	@Override
@@ -82,24 +61,4 @@ public class Iota extends Protocol {
 			throw new RuntimeException("Failed to create Iota account from json object", e);
 		}
 	}
-	
-	// TODO move this to account. an account has to know how to derive the address from its secret
-	// https://github.com/modum-io/tokenapp-keys-iota/blob/master/src/main/java/io/modum/IotaAddressGenerator.java
-	public static String deriveAddressFromSeed(String seed) {
-		ICurl curl = new JCurl(SpongeFactory.Mode.CURLP81);
-		int index = 0;
-
-		try {			
-			return IotaAPIUtils.newAddress(
-					seed, 
-					IotaAccount.SECURITY_LEVEL_DEFAULT,
-					index, 
-					IotaAccount.CHECKSUM_DEFAULT,
-					curl);
-		} 
-		catch (ArgumentException e) {
-			throw new IllegalArgumentException(e);
-		}
-	} 
-
 }

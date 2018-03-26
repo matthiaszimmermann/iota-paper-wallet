@@ -13,7 +13,7 @@ import org.matthiaszimmermann.crypto.core.Wallet;
 public class WalletPageUtility extends HtmlUtility {
 
 	public static final String UTC_DATE_TIME_PATTERN = "'UTC 'yyyy-MM-dd' 'HH:mm:ss.nVV";
-	
+
 	// TODO verify version with the one in the pom.xml
 	public static final String VERSION = "0.1.0-SNAPSHOT";
 	public static final String REPOSITORY = "https://github.com/matthiaszimmermann/TODO";
@@ -65,13 +65,14 @@ public class WalletPageUtility extends HtmlUtility {
 		Protocol protocol = wallet.getProtocol();
 		Technology technology = protocol.getTechnology();
 		String address = wallet.getAccount().getAddress();
-		String seed = wallet.getSeed();
+		String secret = wallet.getSecret();
+		String secretLabel = wallet.getSecretLabel();
 		String mnemonic = Mnemonic.convert(wallet.getMnemonicWords());
 		String walletFileContent = wallet.toString();
 
 		byte [] logo = FileUtility.getResourceAsBytes(getLogo(technology));
 		byte [] addressQrCode = QrCodeUtility.contentToPngBytes(address, 256);
-		byte [] secretQrCode = QrCodeUtility.contentToPngBytes(seed, 256);
+		byte [] secretQrCode = QrCodeUtility.contentToPngBytes(secret, 256);
 		byte [] walletQrCode = QrCodeUtility.contentToPngBytes(walletFileContent, 400);
 
 		StringBuffer html = new StringBuffer();
@@ -112,30 +113,33 @@ public class WalletPageUtility extends HtmlUtility {
 		// add 2nd row
 		HtmlUtility.addOpenDiv(html, CSS_CLEARFIX);
 
-		// qr code for seed		
+		// qr code for secret (private key/seed/mnemonic)		
 		HtmlUtility.addOpenDiv(html, CSS_COLUMN);
-		HtmlUtility.addParagraph(html, "QR Code Seed", CSS_CAPTION);
+		HtmlUtility.addParagraph(html, "QR Code " + secretLabel, CSS_CAPTION);
 		HtmlUtility.addEncodedImage(html, secretQrCode, 200, CSS_IMG_SECRET);
 		HtmlUtility.addCloseDiv(html);
 
 		HtmlUtility.addOpenDiv(html, CSS_FILL);
 
+		// address
 		HtmlUtility.addParagraph(html, "Address", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, address);
 		HtmlUtility.addCloseDiv(html);
 
-		if(!seed.equals(mnemonic)) {
-			HtmlUtility.addParagraph(html, "Seed", CSS_CAPTION);
+		// secret
+		HtmlUtility.addParagraph(html, secretLabel, CSS_CAPTION);
+		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
+		HtmlUtility.addContent(html, secret);
+		HtmlUtility.addCloseDiv(html);
+
+		// mnemonic (only if different from secret
+		if(!secret.equals(mnemonic)) {
+			HtmlUtility.addParagraph(html, "Mnemonic", CSS_CAPTION);
 			HtmlUtility.addOpenDiv(html, CSS_CONTENT);
-			HtmlUtility.addContent(html, seed);
+			HtmlUtility.addContent(html, mnemonic);
 			HtmlUtility.addCloseDiv(html);
 		}
-
-		HtmlUtility.addParagraph(html, "Mnemonic", CSS_CAPTION);
-		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
-		HtmlUtility.addContent(html, mnemonic);
-		HtmlUtility.addCloseDiv(html);
 
 		HtmlUtility.addCloseDiv(html);
 		HtmlUtility.addCloseDiv(html);
@@ -157,16 +161,19 @@ public class WalletPageUtility extends HtmlUtility {
 		HtmlUtility.addContent(html, wallet.getPassPhrase());
 		HtmlUtility.addCloseDiv(html);
 
+		// wallet file content
 		HtmlUtility.addParagraph(html, "File Content", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, walletFileContent);
 		HtmlUtility.addCloseDiv(html);
 
+		// wallet file name
 		HtmlUtility.addParagraph(html, "File Name", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, wallet.getFileName());
 		HtmlUtility.addCloseDiv(html);
 
+		// this paper wallet creation date
 		HtmlUtility.addParagraph(html, "Creation Date", CSS_CAPTION);
 		HtmlUtility.addOpenDiv(html, CSS_CONTENT);
 		HtmlUtility.addContent(html, getCurrentDateTimeUTC());
@@ -188,9 +195,9 @@ public class WalletPageUtility extends HtmlUtility {
 
 	private static String getCurrentDateTimeUTC() {
 		DateTimeFormatter format = DateTimeFormatter.ofPattern(UTC_DATE_TIME_PATTERN);
-        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+		ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
 
-        return now.format(format);
+		return now.format(format);
 	}
 
 	private static String getLogo(Technology technology) {

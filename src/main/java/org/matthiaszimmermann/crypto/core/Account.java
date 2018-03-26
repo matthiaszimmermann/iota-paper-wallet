@@ -1,5 +1,7 @@
 package org.matthiaszimmermann.crypto.core;
 
+import java.util.List;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.matthiaszimmermann.crypto.utility.AesUtility;
@@ -14,23 +16,34 @@ public abstract class Account {
 	public static final String JSON_ENCRYPTED = "encrypted";
 	public static final String JSON_IV = "iv";
 
-	protected String address;
-	protected String secret;
-	protected String passPhrase;
-	protected Protocol protocol;
+	private String address;
+	private String secret;
+	private String passPhrase;
+	private Protocol protocol;
 
 	public Account(String passPhrase, Protocol protocol) {
 		processPassPhrase(passPhrase);
 		processProtocol(protocol);
 	}
-
-	public Account(JSONObject node, String passPhrase, Protocol protocol) throws JSONException {
-		processPassPhrase(passPhrase);
-		processAddress(node);
-		processSecret(node);
-		processProtocol(protocol);
+	
+	public Account(List<String> mnemonicWords, String passPhrase, Protocol protocol) {
+		this(passPhrase, protocol);
+		
+		secret = deriveSecret(mnemonicWords, getPassPhrase());
+		address = deriveAddress(getSecret(), getNetwork());
 	}
 
+	public Account(JSONObject node, String passPhrase, Protocol protocol) throws JSONException {
+		this(passPhrase, protocol);
+		
+		processAddress(node);
+		processSecret(node);
+	}
+
+	public abstract String deriveSecret(List<String> menmonicWords, String passPhrase);
+	
+	public abstract String deriveAddress(String secret, Network network);
+	
 	/**
 	 * Sets pass phrase member variable and converts a null value into an empty string.
 	 */
@@ -50,7 +63,7 @@ public abstract class Account {
 	}
 
 	/**
-	 * Extracts address member variable from provided node.
+	 * Extracts secret member variable from provided node and verifies against the address.
 	 */
 	private void processSecret(JSONObject node) throws JSONException {
 		// check and extract seed
@@ -86,6 +99,12 @@ public abstract class Account {
 		else {
 			secret = node.getString(JSON_SECRET);
 		}
+		
+		String addressExpected = deriveAddress(secret, getNetwork());
+		if(!address.equals(addressExpected)) {
+			throw new IllegalArgumentException(
+					String.format("Address verification failure. Expected '%s' but found '%s'", addressExpected, address));
+		}
 	}
 
 	private void processProtocol(Protocol protocol) {
@@ -94,15 +113,6 @@ public abstract class Account {
 		}
 
 		this.protocol = protocol;
-	}
-
-	/**
-	 * Returns content of account as String.
-	 * May be used to write account to a file system.
-	 */
-	@Override
-	public String toString() {
-		return toJson().toString().replace(",\"", ", \"");
 	}
 
 	/**
@@ -157,13 +167,25 @@ public abstract class Account {
 
 		return obj;
 	}
+	
+	protected void setAddress(String address) {
+		this.address = address;
+	}
 
+	public void setSecret(String secret) {
+		this.secret = secret;
+	}
+	
 	public String getAddress() {
 		return address;
 	}
 
 	public String getSecret() {
 		return secret;
+	}
+
+	public String getPassPhrase() {
+		return passPhrase;
 	}
 
 	public Protocol getProtocol() {
@@ -177,6 +199,15 @@ public abstract class Account {
 	public Technology getTechnology() {
 		return protocol == null ? null : protocol.getTechnology();
 	}	
+
+	/**
+	 * Returns content of account as String.
+	 * May be used to write account to a file system.
+	 */
+	@Override
+	public String toString() {
+		return toJson().toString().replace(",\"", ", \"");
+	}
 
 	@Override
 	public boolean equals(Object obj) {

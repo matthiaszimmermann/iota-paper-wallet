@@ -30,57 +30,31 @@ public class BitcoinAccount extends Account {
 	 * @param NetworkParameters params
 	 */
 	public BitcoinAccount(List<String> mnemonicWords, String passPhrase, Network network) {
-		super(passPhrase, new Bitcoin(network));
+		super(mnemonicWords, passPhrase, new Bitcoin(network));
 
-		getProtocol().validateMnemonicWords(mnemonicWords);
-		DeterministicKey dk = getDeterministicKey(mnemonicWords);
-		
-		secret = String.join(" ", mnemonicWords);
-		chains = getChains(dk, network);
+		chains = getChains(mnemonicWords, getNetwork());
 	}
 
 	public BitcoinAccount(JSONObject accountJson, String passPhrase, Network network) throws JSONException {
 		super(accountJson, passPhrase, new Bitcoin(network));
 		
-		List<String> mnemonicWords = new ArrayList<String>(Arrays.asList(secret.split(" ")));
-		DeterministicKey dk = getDeterministicKey(mnemonicWords);
-		
-		chains = getChains(dk, network);		
-	}
-
-	private DeterministicKey getDeterministicKey(List<String> mnemonicWords) {
-		byte [] seed = MnemonicCode.toSeed(mnemonicWords, passPhrase);
-		
-		DeterministicKey rootKey = ((Bitcoin)getProtocol()).seedToRootKey(seed);
-		int child = rootKey.getChildNumber().num();
-		int childnum = child | ChildNumber.HARDENED_BIT;
-		
-		return HDKeyDerivation.deriveChildKey(rootKey, childnum);
-	}
-
-	private List<Chain> getChains(DeterministicKey dk, Network network) {
-		List<Chain> chains = new ArrayList<>();
-		chains.add(new Chain(dk, true, network));
-		chains.add(new Chain(dk, false, network));
-		
-		return chains;
+		List<String> mnemonicWords = new ArrayList<String>(Arrays.asList(getSecret().split(" ")));
+		chains = getChains(mnemonicWords, getNetwork());
 	}
 
 	@Override
-	public String getAddress() {
-		Chain chain = getReceive();
-		Address address = chain.getAddressAt(0);
-		return address.getAddressString();
+	public String deriveSecret(List<String> menmonicWords, String passPhrase) {
+		return String.join(" ", menmonicWords);
 	}
 
-	/**
-	 * Return receive chain this account.
-	 *
-	 * @return HD_Chain
-	 *
-	 */
-	protected Chain getReceive() {
-		return chains.get(0);
+	@Override
+	public String deriveAddress(String secret, Network network) {
+		List<String> mnemonicWords = new ArrayList<String>(Arrays.asList(secret.split(" ")));
+		DeterministicKey dk = getDeterministicKey(mnemonicWords);
+		Chain receiveChain = new Chain(dk, true, network);
+		Address address = receiveChain.getAddressAt(0);
+		
+		return address.getAddressString();
 	}
 
 	@Override
@@ -93,6 +67,27 @@ public class BitcoinAccount extends Account {
 		catch(JSONException ex) {
 			throw new RuntimeException(ex);
 		}
+	}
+
+	private List<Chain> getChains(List<String> mnemonicWords, Network network) {
+		DeterministicKey dk = getDeterministicKey(mnemonicWords);
+		List<Chain> chains = new ArrayList<>();
+		chains.add(new Chain(dk, true, network)); // receive chain
+		chains.add(new Chain(dk, false, network)); // change chain
+		
+		return chains;
+	}
+
+	private DeterministicKey getDeterministicKey(List<String> mnemonicWords) {
+		// the passPhrase needs to be set to an empty string, otherwise the resulting addresses do not match 
+		// those produced by the electrum wallet
+		byte [] seed = MnemonicCode.toSeed(mnemonicWords, "");
+		
+		DeterministicKey rootKey = ((Bitcoin)getProtocol()).seedToRootKey(seed);
+		int child = rootKey.getChildNumber().num();
+		int childnum = child | ChildNumber.HARDENED_BIT;
+		
+		return HDKeyDerivation.deriveChildKey(rootKey, childnum);
 	}
 
 	private JSONArray chainsToJson() {

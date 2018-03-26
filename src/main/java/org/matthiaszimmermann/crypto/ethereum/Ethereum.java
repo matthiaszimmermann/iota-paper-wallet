@@ -68,9 +68,9 @@ public class Ethereum extends Protocol {
 	}
 
 	@Override
-	public Account createAccount(List<String> mnemonicWords, String passPhrase) {
+	public Account createAccount(List<String> mnemonicWords, String passPhrase, Network network) {
 		validateMnemonicWords(mnemonicWords);
-		return new EthereumAccount(mnemonicWords, passPhrase, getNetwork());
+		return new EthereumAccount(mnemonicWords, passPhrase, network);
 	}
 
 	@Override

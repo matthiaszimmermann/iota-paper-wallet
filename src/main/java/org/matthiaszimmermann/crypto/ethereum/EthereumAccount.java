@@ -30,14 +30,8 @@ public class EthereumAccount extends Account {
 		objectMapper.registerModule(new JsonOrgModule());	
 	}
 
-	Credentials credentials = null;
-
 	public EthereumAccount(List<String> mnemonicWords, String passPhrase, Network network) {
-		super(passPhrase, new Ethereum(network));
-		
-		secret = derivePrivateKeyFromMnemonics(mnemonicWords, passPhrase);
-		credentials = Credentials.create(secret);
-		address = deriveAddressFromPrivateKey(secret);
+		super(mnemonicWords, passPhrase, new Ethereum(network));
 	}
 	
 	public EthereumAccount(JSONObject accountJson, String passPhrase, Network network) {
@@ -46,14 +40,13 @@ public class EthereumAccount extends Account {
 		WalletFile walletFile = objectMapper.convertValue(accountJson, WalletFile.class);
 		
 		try {
-			credentials = Credentials.create(Wallet.decrypt(passPhrase, walletFile));
-			
+			Credentials credentials = Credentials.create(Wallet.decrypt(passPhrase, walletFile));
 			ECKeyPair keyPair = credentials.getEcKeyPair();
 			BigInteger privateKey = keyPair.getPrivateKey();
 			
-			secret = Numeric.toHexStringWithPrefix(privateKey);
-		    address = credentials.getAddress();
-		    protocol = new Ethereum(network);
+			// jaxx wallet does not like private key with prefix
+			setSecret(Numeric.toHexStringNoPrefix(privateKey));
+		    setAddress(credentials.getAddress());
 		} 
 		catch (CipherException e) {
 			throw new RuntimeException("Failed to create credentials from provided wallet json");
@@ -61,17 +54,19 @@ public class EthereumAccount extends Account {
 	}
 	
 	/**
-	 * Returns the private key (hex string with prefix) derived from the provided mnemonic words 
+	 * Returns the private key (hex string with prefix) derived from the provided mnemonic words and pass phrase
 	 * @param mnemonicWords
 	 * @param passPhrase
 	 */
-	private String derivePrivateKeyFromMnemonics(List<String> mnemonicWords, String passPhrase) {
+	@Override 
+	public String deriveSecret(List<String> mnemonicWords, String passPhrase) {
 		String mnemonic = String.join(" ", mnemonicWords);
 		byte [] seed = MnemonicUtils.generateSeed(mnemonic, passPhrase);
 		byte [] privateKeyBytes = Hash.sha256(seed);
 		ECKeyPair keyPair = ECKeyPair.create(privateKeyBytes);
 		
-		return Numeric.toHexStringWithPrefix(keyPair.getPrivateKey());
+		// jaxx wallet does not like private key with prefix
+		return Numeric.toHexStringNoPrefix(keyPair.getPrivateKey());
 	}
 	
 	/**
@@ -79,17 +74,18 @@ public class EthereumAccount extends Account {
 	 * @param privateKey (hex string with prefix)
 	 * @param passPhrase
 	 */
-	private String deriveAddressFromPrivateKey(String privateKey) {
-		Credentials credentials = Credentials.create(privateKey);
-		
+	@Override
+	public String deriveAddress(String secret, Network network) {
+		Credentials credentials = Credentials.create(secret);
 		return credentials.getAddress();
 	}
 	
 	@Override
 	public JSONObject toJson(boolean includeProtocolInfo) {
 		try {
+			Credentials credentials = Credentials.create(getSecret());
 			ECKeyPair keyPair = credentials.getEcKeyPair();
-			WalletFile wallet = Wallet.createStandard(passPhrase, keyPair);
+			WalletFile wallet = Wallet.createStandard(getPassPhrase(), keyPair);
 			JSONObject json = objectMapper.convertValue(wallet, JSONObject.class);
 			return json;
 		}

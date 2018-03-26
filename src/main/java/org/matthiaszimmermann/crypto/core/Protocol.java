@@ -16,14 +16,14 @@ public abstract class Protocol {
 		processNetwork(network);
 	}
 
-	abstract public void validateMnemonicWords(List<String> mnemonicWords);
-
 	abstract public Wallet createWallet(List<String> mnemonicWords, String passPhase);
 	abstract public Wallet restoreWallet(File file, String passPhrase);
 
-	abstract public Account createAccount(List<String> mnemonicWords, String passPhrase);
+	abstract public Account createAccount(List<String> mnemonicWords, String passPhrase, Network network);
 	abstract public Account restoreAccount(JSONObject accountJson, String passPhrase);
 
+	abstract public void validateMnemonicWords(List<String> mnemonicWords);
+	
 	public List<String> generateMnemonicWords() {
 		byte [] entropy = EntropyUtility.generateEntropy();
 		return Mnemonic.deriveWords(entropy);

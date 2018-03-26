@@ -31,7 +31,7 @@ public abstract class Wallet {
 		processPassPhrase(passPhrase);
 		processMnemonicWords(mnemonicWords, protocol);
 		
-		account = protocol.createAccount(mnemonicWords, passPhrase);
+		account = protocol.createAccount(mnemonicWords, passPhrase, protocol.getNetwork());
 	}
 
 	public Wallet(File file, String passPhrase) throws Exception {
@@ -41,8 +41,8 @@ public abstract class Wallet {
 		JSONObject accountJson = walletJson.getJSONObject(JSON_ACCOUNT);
 		Protocol protocol = getProtocol(walletJson);
 
-		absolutePath = file.getAbsolutePath();
 		account = protocol.restoreAccount(accountJson, passPhrase);
+		absolutePath = file.getAbsolutePath();
 	}
 
 	private Protocol getProtocol(JSONObject walletJson) throws JSONException {
@@ -77,7 +77,11 @@ public abstract class Wallet {
 		return mnemonicWords;
 	}
 
-	public abstract String getSeed();
+	public String getSecret() {
+		return getAccount().getSecret();
+	}
+	
+	public abstract String getSecretLabel();
 
 	public String getPassPhrase() {
 		return passPhrase;

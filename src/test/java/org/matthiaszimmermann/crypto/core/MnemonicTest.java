@@ -15,7 +15,7 @@ public class MnemonicTest extends BaseTest {
 	public static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 	
 	public static final byte [] ENTROPY_BYTES_16 =  {108, 59, 35, 9, 90, 110, 57, -31, -118, 77, 104, 118, -89, 58, -21, 121};
-	public static final String ENTROPY_WORDS_16 = "history suit seat regular toe valid circle public issue degree river vendor";
+	public static final String MNEMONIC_WORDS_16 = "history suit seat regular toe valid circle public issue degree river vendor";
 
 	@Test
 	public void testBip39Vectors() throws Exception {
@@ -65,7 +65,7 @@ public class MnemonicTest extends BaseTest {
 		List<String> mnemonicWords = Mnemonic.deriveWords(ENTROPY_BYTES_16);
 		String mnemonicSentence = Mnemonic.convert(mnemonicWords);
 
-		assertEquals(ENTROPY_WORDS_16, mnemonicSentence);
+		assertEquals(MNEMONIC_WORDS_16, mnemonicSentence);
 
 		byte [] entropy = Mnemonic.deriveEntropy(mnemonicWords);
 

@@ -73,9 +73,9 @@ public class Bitcoin extends Protocol {
 	}
 
 	@Override
-	public BitcoinAccount createAccount(List<String> mnemonicWords, String passPhrase) {		
+	public BitcoinAccount createAccount(List<String> mnemonicWords, String passPhrase, Network network) {		
 		validateMnemonicWords(mnemonicWords);
-		return new BitcoinAccount(mnemonicWords, passPhrase, getNetwork());
+		return new BitcoinAccount(mnemonicWords, passPhrase, network);
 	}
 
 	@Override
