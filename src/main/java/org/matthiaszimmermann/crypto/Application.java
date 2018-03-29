@@ -58,6 +58,8 @@ public class Application {
 
 	public static void main(String[] args) throws Exception {
 		Application app = new Application();
+
+		// TODO result is sometimes a file and sometimes an error code -> use exceptions if there is an exception
 		String result = app.run(args);
 
 		if(result.startsWith(CRATE_ERROR) || result.startsWith(VERIFY_ERROR)) {
@@ -66,6 +68,7 @@ public class Application {
 	}
 
 	public String run(String [] args) {
+		// TODO makes more than declares
 		parseCommandLine(args);
 
 		if(walletFile == null) {
@@ -81,6 +84,7 @@ public class Application {
 
 		// TODO add command line params to indicate network
 		Protocol protocol = ProtocolFactory.getInstance(Technology.get(technology), Network.Production);
+		// TODO this default value is different compared to targetdirectory
 		List<String> mnemonicWords = mnemonic != null ? Mnemonic.convert(mnemonic) : protocol.generateMnemonicWords();
 		Wallet wallet = null;
 
@@ -89,28 +93,41 @@ public class Application {
 			wallet.setPathToDirectory(targetDirectory);
 		}
 		catch(Exception e) {
-			return String.format("%s %s", CRATE_ERROR, e.getMessage());
+			throw new CreateWalletFileException(String.format("%s %s", CRATE_ERROR, e.getMessage()));
 		}
 
-		String jsonFile = wallet.getAbsolutePath();
-		FileUtility.saveToFile(wallet.toString(), jsonFile);
+		return writeFiles(wallet);
+	}
 
-		logWalletInfo(wallet);
-		log(String.format("wallet file %s successfully created", jsonFile));
-
-		String html = WalletPageUtility.createHtml(wallet);
-		byte [] qrCode = QrCodeUtility.contentToPngBytes(wallet.getAccount().getAddress(), 256);
-
+	private String writeFiles(Wallet wallet) {
 		String path = wallet.getPathToDirectory();
 		String baseName = wallet.getFileBaseName();
-		String htmlFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_HTML);
-		String pngFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_PNG);
 
-		log("writing html and png output files ...");
-		FileUtility.saveToFile(html, htmlFile);
-		FileUtility.saveToFile(qrCode, pngFile);
+		writeWalletFile(wallet, path, baseName);
+		writeHtmlFile(wallet, path, baseName);
+		writeQRCodeFile(wallet, path, baseName);
 
 		return String.format("%s %s", CREATE_OK, wallet.getAbsolutePath());
+	}
+
+	private void writeQRCodeFile(Wallet wallet, String path, String baseName) {
+		String pngFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_PNG);
+		byte [] qrCode = QrCodeUtility.contentToPngBytes(wallet.getAccount().getAddress(), 256);
+		FileUtility.saveToFile(qrCode, pngFile);
+	}
+
+	private void writeHtmlFile(Wallet wallet, String path, String baseName) {
+		String html = WalletPageUtility.createHtml(wallet);
+		String htmlFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_HTML);
+		FileUtility.saveToFile(html, htmlFile);
+		log("writing html and png output files ...");
+	}
+
+	private void writeWalletFile(Wallet wallet, String path, String baseName) {
+		String jsonFile = String.format("%s%s%s", path, File.separator, baseName, Wallet.JSON_FILE_EXTENSION);
+		FileUtility.saveToFile(wallet.toString(), jsonFile);
+		logWalletInfo(wallet);
+		log(String.format("wallet file %s successfully created", jsonFile));
 	}
 
 	public String verifyWalletFile() {

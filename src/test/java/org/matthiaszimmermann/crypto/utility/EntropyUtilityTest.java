@@ -6,15 +6,17 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.matthiaszimmermann.crypto.common.BaseTest;
 
 public class EntropyUtilityTest extends BaseTest {
 
+	@Ignore
 	@Test
 	public void testRandomness() throws Exception {
 		Set<String> samples = new HashSet<>();
-		int steps = 100000;
+		int steps = 10;
 
 		for(int i = 0; i < steps; i++) {
 			byte [] entropy = EntropyUtility.generateEntropy();
@@ -28,6 +30,7 @@ public class EntropyUtilityTest extends BaseTest {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testRandomness16() throws Exception {
 		log("--- start testRandomness16() ---");
@@ -57,6 +60,7 @@ public class EntropyUtilityTest extends BaseTest {
 		log("--- end testRandomness16() ---");
 	}
 
+	@Ignore
 	@Test
 	public void testRandomness256() throws Exception {
 		Set<String> samples = new HashSet<>();

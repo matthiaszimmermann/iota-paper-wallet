@@ -64,6 +64,8 @@ public class Bitcoin extends Protocol {
 	
 	@Override
 	public Wallet restoreWallet(File file, String passPhrase) {
+		// verifier.checkPreconditions(file) // and write tests for it
+
 		try {
 			return new BitcoinWallet(file, passPhrase);
 		} 

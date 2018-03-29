@@ -32,7 +32,7 @@ public class EntropyUtility {
 		
         try {
             SecureRandom sr;
-            sr = SecureRandom.getInstanceStrong();
+            sr = SecureRandom.getInstance("SHA1PRNG");//getInstanceStrong();
             return sr.generateSeed(bits / 8);
         } 
         catch (NoSuchAlgorithmException e) {

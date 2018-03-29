@@ -17,7 +17,7 @@ public abstract class Wallet {
 	public static final String JSON_NETWORK = "network";
 
 	public static final String DEFAULT_PATH_TO_DIRECTORY = System.getProperty("user.home");
-	public static final String DEFAULT_FILE_EXTENSION = "json";
+	public static final String JSON_FILE_EXTENSION = "json";
 
 	private String pathToDirectory = DEFAULT_PATH_TO_DIRECTORY;
 	private String absolutePath = null;
@@ -28,21 +28,23 @@ public abstract class Wallet {
 
 	protected Wallet(List<String> mnemonicWords, String passPhrase, Protocol protocol) {
 		processProtocol(protocol);
-		processPassPhrase(passPhrase);
 		processMnemonicWords(mnemonicWords, protocol);
-		
+
+		this.passPhrase = passPhrase;
 		account = protocol.createAccount(mnemonicWords, passPhrase, protocol.getNetwork());
 	}
 
-	public Wallet(File file, String passPhrase) throws Exception {
-		processPassPhrase(passPhrase);
-
-		JSONObject walletJson = readWalletFile(file);
+	public Wallet(JSONObject walletJson, String passPhrase) throws Exception {
 		JSONObject accountJson = walletJson.getJSONObject(JSON_ACCOUNT);
 		Protocol protocol = getProtocol(walletJson);
 
+		this.passPhrase = passPhrase;
 		account = protocol.restoreAccount(accountJson, passPhrase);
-		absolutePath = file.getAbsolutePath();
+	}
+
+	// TODO remove
+	public Wallet(File file, String passPhrase) throws Exception {
+		this(readWalletFile(file), passPhrase);
 	}
 
 	private Protocol getProtocol(JSONObject walletJson) throws JSONException {
@@ -67,10 +69,6 @@ public abstract class Wallet {
 		}
 
 		protocol.validateMnemonicWords(mnemonicWords);
-	}
-
-	protected void processPassPhrase(String pp) {
-		passPhrase = pp;
 	}
 
 	public List<String> getMnemonicWords() {
@@ -108,9 +106,7 @@ public abstract class Wallet {
 	}
 
 	public String getFileName() {
-		String ext = getFileExtension();
-		return ext == null || ext.length() == 0 ? 
-				getFileBaseName() : String.format("%s.%s", getFileBaseName(), ext);
+		return String.format("%s.%s", getFileBaseName(), JSON_FILE_EXTENSION);
 	}
 
 	/**
@@ -124,14 +120,7 @@ public abstract class Wallet {
 		return getAccount().getAddress();
 	}
 
-	/** 
-	 * Returns the wallet file extension.
-	 */
-	public String getFileExtension() {
-		return DEFAULT_FILE_EXTENSION;
-	}
-
-	/**
+    /**
 	 * Returns wallet as JSONObject.
 	 * 
 	 * @throws Exception 
@@ -165,7 +154,7 @@ public abstract class Wallet {
 	 * @return the file content as JSON object
 	 * @throws JSONException
 	 */
-	protected JSONObject readWalletFile(File file) throws JSONException {
+	protected static JSONObject readWalletFile(File file) throws JSONException {
 		String jsonString = FileUtility.readTextFile(file);
 
 		if(jsonString.isEmpty()) {
