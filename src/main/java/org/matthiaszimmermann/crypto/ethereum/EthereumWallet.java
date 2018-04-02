@@ -1,8 +1,8 @@
 package org.matthiaszimmermann.crypto.ethereum;
 
-import java.io.File;
 import java.util.List;
 
+import org.json.JSONObject;
 import org.matthiaszimmermann.crypto.core.Network;
 import org.matthiaszimmermann.crypto.core.ProtocolFactory;
 import org.matthiaszimmermann.crypto.core.Technology;
@@ -12,8 +12,8 @@ public class EthereumWallet extends Wallet {
 	
 	public static final String SECRET_LABEL = "Private Key";
 
-	public EthereumWallet(File file, String passPhrase) throws Exception {
-		super(file, passPhrase);
+	public EthereumWallet(JSONObject walletJson, String passPhrase) throws Exception {
+		super(walletJson, passPhrase);
 	}
 
 	public EthereumWallet(List<String> mnemonicWords, String passPhrase, Network network) {

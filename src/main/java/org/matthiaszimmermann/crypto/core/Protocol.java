@@ -1,6 +1,5 @@
 package org.matthiaszimmermann.crypto.core;
 
-import java.io.File;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -17,7 +16,7 @@ public abstract class Protocol {
 	}
 
 	abstract public Wallet createWallet(List<String> mnemonicWords, String passPhase);
-	abstract public Wallet restoreWallet(File file, String passPhrase);
+	abstract public Wallet restoreWallet(JSONObject walletJson, String passPhrase);
 
 	abstract public Account createAccount(List<String> mnemonicWords, String passPhrase, Network network);
 	abstract public Account restoreAccount(JSONObject accountJson, String passPhrase);

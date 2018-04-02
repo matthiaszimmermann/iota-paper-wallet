@@ -13,7 +13,25 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class FileUtility {
+
+	public static JSONObject readJsonFile(File file) {
+		String jsonString = readTextFile(file);
+
+		if(jsonString.isEmpty()) {
+			throw new RuntimeException("Empty json file");
+		}
+
+		try {
+			return new JSONObject(jsonString);
+		}
+		catch (JSONException e) {
+			throw new RuntimeException("Failed to convert json file to json object", e);
+		}
+	}
 
 	public static String readTextFile(String fileName) {
 		try {
@@ -25,6 +43,15 @@ public class FileUtility {
 	}
 
 	public static String readTextFile(File file) {
+		
+		if(!file.exists()) {
+			throw new RuntimeException("File to read does not exist " + file.getAbsolutePath());
+		}
+		
+		if(file.isDirectory()) {
+			throw new RuntimeException("Provided path is directory, not file " + file.getAbsolutePath());
+		}
+		
 		StringBuilder sb = new StringBuilder();
 
 		try {
@@ -39,7 +66,7 @@ public class FileUtility {
 			in.close();
 		}
 		catch (Exception e) {
-			throw new RuntimeException("Failed to read content from text file " + file.getAbsolutePath(), e);
+			throw new RuntimeException("Failed to read content from file " + file.getAbsolutePath(), e);
 		}
 
 		return sb.toString();

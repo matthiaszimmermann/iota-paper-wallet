@@ -1,6 +1,5 @@
 package org.matthiaszimmermann.crypto.bitcoin;
 
-import java.io.File;
 import java.util.List;
 
 import org.bitcoinj.core.NetworkParameters;
@@ -55,20 +54,20 @@ public class Bitcoin extends Protocol {
 			throw new IllegalArgumentException("Provided mnemonic word list fails to verify: ", e);
 		}
 	}
-	
+
 	@Override
 	public Wallet createWallet(List<String> mnemonicWords, String passPhase) {
 		validateMnemonicWords(mnemonicWords);
 		return new BitcoinWallet(mnemonicWords, passPhase, getNetwork());
 	}
-	
+
 	@Override
-	public Wallet restoreWallet(File file, String passPhrase) {
-		// verifier.checkPreconditions(file) // and write tests for it
+	public Wallet restoreWallet(JSONObject walletJson, String passPhrase) {
+        // verifier.checkPreconditions(json) // and write tests for it
 
 		try {
-			return new BitcoinWallet(file, passPhrase);
-		} 
+			return new BitcoinWallet(walletJson, passPhrase);
+		}
 		catch (Exception e) {
 			throw new RuntimeException("Failed to restore Bitcoin wallet", e);
 		} 	

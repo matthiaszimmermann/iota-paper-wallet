@@ -3,6 +3,7 @@ package org.matthiaszimmermann.crypto;
 import java.io.File;
 import java.util.List;
 
+import org.json.JSONObject;
 import org.matthiaszimmermann.crypto.core.Account;
 import org.matthiaszimmermann.crypto.core.Mnemonic;
 import org.matthiaszimmermann.crypto.core.Network;
@@ -135,8 +136,10 @@ public class Application {
 
 		try {
 			File file = new File(walletFile);
-			Protocol protocol = ProtocolFactory.getInstance(file);
-			Wallet wallet = protocol.restoreWallet(file, passPhrase);
+			JSONObject walletJson = FileUtility.readJsonFile(file);
+			Protocol protocol = ProtocolFactory.getInstance(walletJson);
+			Wallet wallet = protocol.restoreWallet(walletJson, passPhrase);
+			
 			log("wallet verification successful");
 			logWalletInfo(wallet);
 			return VERIFY_OK;

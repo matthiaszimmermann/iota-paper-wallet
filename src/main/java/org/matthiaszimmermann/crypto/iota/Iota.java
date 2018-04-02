@@ -1,6 +1,5 @@
 package org.matthiaszimmermann.crypto.iota;
 
-import java.io.File;
 import java.util.List;
 
 import org.json.JSONException;
@@ -37,12 +36,12 @@ public class Iota extends Protocol {
 	}
 
 	@Override
-	public Wallet restoreWallet(File file, String passPhrase) {
+	public Wallet restoreWallet(JSONObject walletJson, String passPhrase) {
 		try {
-			return new IotaWallet(file, passPhrase);
-		} 
+			return new IotaWallet(walletJson, passPhrase);
+		}
 		catch (Exception e) {
-			throw new RuntimeException("Failed to restore Iota wallet", e);
+			throw new RuntimeException("Failed to restore Ethereum wallet", e);
 		} 	
 	}
 

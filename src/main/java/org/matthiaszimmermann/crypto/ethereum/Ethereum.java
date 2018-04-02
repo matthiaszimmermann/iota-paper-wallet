@@ -1,6 +1,5 @@
 package org.matthiaszimmermann.crypto.ethereum;
 
-import java.io.File;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -58,10 +57,10 @@ public class Ethereum extends Protocol {
 	}
 
 	@Override
-	public Wallet restoreWallet(File file, String passPhrase) {
+	public Wallet restoreWallet(JSONObject walletJson, String passPhrase) {
 		try {
-			return new EthereumWallet(file, passPhrase);
-		} 
+			return new EthereumWallet(walletJson, passPhrase);
+		}
 		catch (Exception e) {
 			throw new RuntimeException("Failed to restore Ethereum wallet", e);
 		} 	
