@@ -27,9 +27,6 @@ public class Application {
 	public static final String SWITCH_PASS_PHRASE = "-p";
 	public static final String SWITCH_VERIFY = "-v";
 
-	public static final String CREATE_OK = "WALLET CREATION OK";
-	public static final String CRATE_ERROR = "WALLET CREATION ERROR";
-
 	public static final String VERIFY_OK = "WALLET VERIFICATION OK";
 	public static final String VERIFY_ERROR = "WALLET VERIFICATION ERROR";
 
@@ -59,28 +56,21 @@ public class Application {
 
 	public static void main(String[] args) throws Exception {
 		Application app = new Application();
-
-		// TODO result is sometimes a file and sometimes an error code -> use exceptions if there is an exception
-		String result = app.run(args);
-
-		if(result.startsWith(CRATE_ERROR) || result.startsWith(VERIFY_ERROR)) {
-			throw new IllegalArgumentException(result);
-		}
+		app.run(args);
 	}
 
-	public String run(String [] args) {
-		// TODO makes more than declares
-		parseCommandLine(args);
+	public void run(String [] args) {
+		processCommandLine(args);
 
 		if(walletFile == null) {
-			return createWalletFile();
+			createWalletFile();
 		}
 		else {
-			return verifyWalletFile();
+			verifyWalletFile();
 		}
 	}
 
-	public String createWalletFile() {
+	public void createWalletFile() {
 		log("creating wallet file ...");
 
 		// TODO add command line params to indicate network
@@ -94,34 +84,19 @@ public class Application {
 			wallet.setPathToDirectory(targetDirectory);
 		}
 		catch(Exception e) {
-			throw new CreateWalletFileException(String.format("%s %s", CRATE_ERROR, e.getMessage()));
+			throw new CreateWalletFileException(String.format("WALLET CREATION ERROR %s", e.getMessage()));
 		}
 
-		return writeFiles(wallet);
+		writeFiles(wallet);
 	}
 
-	private String writeFiles(Wallet wallet) {
+	private void writeFiles(Wallet wallet) {
 		String path = wallet.getPathToDirectory();
 		String baseName = wallet.getFileBaseName();
 
 		writeWalletFile(wallet, path, baseName);
 		writeHtmlFile(wallet, path, baseName);
 		writeQRCodeFile(wallet, path, baseName);
-
-		return String.format("%s %s", CREATE_OK, wallet.getAbsolutePath());
-	}
-
-	private void writeQRCodeFile(Wallet wallet, String path, String baseName) {
-		String pngFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_PNG);
-		byte [] qrCode = QrCodeUtility.contentToPngBytes(wallet.getAccount().getAddress(), 256);
-		FileUtility.saveToFile(qrCode, pngFile);
-	}
-
-	private void writeHtmlFile(Wallet wallet, String path, String baseName) {
-		String html = WalletPageUtility.createHtml(wallet);
-		String htmlFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_HTML);
-		FileUtility.saveToFile(html, htmlFile);
-		log("writing html and png output files ...");
 	}
 
 	private void writeWalletFile(Wallet wallet, String path, String baseName) {
@@ -131,7 +106,20 @@ public class Application {
 		log(String.format("wallet file %s successfully created", jsonFile));
 	}
 
-	public String verifyWalletFile() {
+	private void writeHtmlFile(Wallet wallet, String path, String baseName) {
+		String html = WalletPageUtility.createHtml(wallet);
+		String htmlFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_HTML);
+		FileUtility.saveToFile(html, htmlFile);
+		log("writing html and png output files ...");
+	}
+
+	private void writeQRCodeFile(Wallet wallet, String path, String baseName) {
+		String pngFile = String.format("%s%s%s.%s", path, File.separator, baseName, EXT_PNG);
+		byte [] qrCode = QrCodeUtility.contentToPngBytes(wallet.getAccount().getAddress(), 256);
+		FileUtility.saveToFile(qrCode, pngFile);
+	}
+
+	public void verifyWalletFile() {
 		log("verifying wallet file ...");
 
 		try {
@@ -139,14 +127,12 @@ public class Application {
 			JSONObject walletJson = FileUtility.readJsonFile(file);
 			Protocol protocol = ProtocolFactory.getInstance(walletJson);
 			Wallet wallet = protocol.restoreWallet(walletJson, passPhrase);
-			
+
 			log("wallet verification successful");
 			logWalletInfo(wallet);
-			return VERIFY_OK;
 		} 
-		catch (Exception e) {
-			log("verification failed: " + e.getLocalizedMessage());
-			return VERIFY_ERROR + " " + e.getLocalizedMessage();
+		catch(Exception e) {
+			throw new VerifyWalletFileException(String.format("WALLET VERIFICATION ERROR %s", e.getMessage()));
 		}
 	}
 
@@ -161,14 +147,14 @@ public class Application {
 		log("encrypted: " + (passPhrase != null && passPhrase.length() > 0));
 		log("pass phrase: " + passPhrase);		
 		log("seed: " + seed);
-		
+
 		String mnemonic = Mnemonic.convert(wallet.getMnemonicWords());
 		if(!mnemonic.equals(seed)) {
 			log("mnemonic: " + mnemonic);
 		}
 	}
 
-	private void parseCommandLine(String [] args) {
+	private void processCommandLine(String [] args) {
 		JCommander cmd = new JCommander(this, args);
 		cmd.setProgramName(COMMAND_NAME);
 
